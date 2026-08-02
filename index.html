@@ -3325,6 +3325,144 @@ function downloadMatchCSVFallback(matchId) {
   showToast('Sin conexión a internet: descargando en CSV (varios archivos)…');
 }
 
+function downloadSeasonExcel() {
+  if (typeof XLSX === 'undefined') { showToast('No se pudo cargar el motor de Excel. Comprueba tu conexión e inténtalo de nuevo.'); return; }
+  const team = db.teams.find(t=>t.id===seasonTeamFilter);
+  if (!team) { showToast('Selecciona un equipo primero'); return; }
+  const teamMatches = (currentStatsScope && currentStatsScope.matches) ? currentStatsScope.matches : db.matches.filter(m=>m.teamId===seasonTeamFilter);
+  const scopeLabel = (currentStatsScope && currentStatsScope.label) || 'Toda la temporada';
+  const players = db.players.filter(p=>p.teams.includes(seasonTeamFilter)).slice().sort((a,b)=>(a.number!=null?a.number:999)-(b.number!=null?b.number:999));
+  const allActions = teamMatches.flatMap(m=>m.actions);
+
+  const wb = XLSX.utils.book_new();
+
+  const neg = allActions.filter(a=>a.rating==='negativa').length;
+  const pos = allActions.filter(a=>a.rating==='positiva').length;
+  const doble = allActions.filter(a=>a.rating==='doble_positiva').length;
+  const totalActs = neg+pos+doble;
+  const globalPct = totalActs ? Math.round(((pos*0.5+doble*1)/totalActs)*1000)/10 : 0;
+  const coverRows = [
+    ['Equipo', team.name],
+    ['Categoría', team.category || '—'],
+    ['Temporada', team.season || '—'],
+    ['Alcance', scopeLabel],
+    ['Partidos incluidos', teamMatches.length],
+    ['Acciones totales', totalActs],
+    ['Errores (negativas)', neg],
+    ['Efectividad global', globalPct + '%'],
+    ['Generado el', new Date().toLocaleString('es-ES')],
+  ];
+  const wsCover = XLSX.utils.aoa_to_sheet(coverRows);
+  wsCover['!cols'] = [{wch:20},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, wsCover, 'Resumen');
+
+  const headerRow1 = ['Dorsal','Jugadora'];
+  const headerRow2 = ['',''];
+  const merges = [ { s:{r:0,c:0}, e:{r:1,c:0} }, { s:{r:0,c:1}, e:{r:1,c:1} } ];
+  ACTIONS.forEach((a,i)=>{
+    const col = 2 + i*5;
+    headerRow1.push(a.label,'','','','');
+    headerRow2.push('Neg','Pos','Doble+','Total','Efec%');
+    merges.push({ s:{r:0,c:col}, e:{r:0,c:col+4} });
+  });
+  const playerRows = players.map(p=>{
+    const pActions = allActions.filter(a=>a.playerId===p.id);
+    const row = [p.number!=null?p.number:'', fullName(p)];
+    ACTIONS.forEach(a=>{
+      const subset = pActions.filter(x=>x.action===a.id);
+      const n = subset.filter(x=>x.rating==='negativa').length;
+      const ps = subset.filter(x=>x.rating==='positiva').length;
+      const d = subset.filter(x=>x.rating==='doble_positiva').length;
+      const t = n+ps+d;
+      const pct = t ? Math.round(((ps*0.5+d*1)/t)*1000)/10 : 0;
+      row.push(n, ps, d, t, t ? pct+'%' : '0%');
+    });
+    return row;
+  });
+  const wsPlayers = XLSX.utils.aoa_to_sheet([headerRow1, headerRow2, ...playerRows]);
+  const wideCols = [{wch:8},{wch:22}];
+  ACTIONS.forEach(()=> wideCols.push({wch:7},{wch:7},{wch:8},{wch:7},{wch:8}));
+  wsPlayers['!cols'] = wideCols;
+  wsPlayers['!merges'] = merges;
+  XLSX.utils.book_append_sheet(wb, wsPlayers, 'Por jugadora');
+
+  const matchRows = teamMatches.filter(m=>m.actions.length).map(m=>{
+    const acts = m.actions;
+    const n = acts.filter(a=>a.rating==='negativa').length;
+    const ps = acts.filter(a=>a.rating==='positiva').length;
+    const d = acts.filter(a=>a.rating==='doble_positiva').length;
+    const t = n+ps+d;
+    const pct = t ? Math.round(((ps*0.5+d*1)/t)*1000)/10 : 0;
+    return [`${m.date}${jornadaLabel(m)}`, m.rival, t, pct+'%'];
+  });
+  const wsMatches = XLSX.utils.aoa_to_sheet([['Partido','Rival','Acciones','% Efectividad'], ...matchRows]);
+  wsMatches['!cols'] = [{wch:22},{wch:20},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsMatches, 'Por partido');
+
+  const workloadRows = players.map(p=>{
+    let setsCount=0, totalPoints=0;
+    teamMatches.forEach(m=>{
+      setsCount += computeSetsPlayed(m, p.id).size;
+      const bySet = computePointsPlayedBySet(m, p.id);
+      totalPoints += Object.values(bySet).reduce((a,b)=>a+b,0);
+    });
+    return [p.number!=null?p.number:'', fullName(p), setsCount, totalPoints];
+  });
+  const wsWorkload = XLSX.utils.aoa_to_sheet([['Dorsal','Jugadora','Sets jugados','Puntos jugados'], ...workloadRows]);
+  wsWorkload['!cols'] = [{wch:8},{wch:22},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsWorkload, 'Carga de juego');
+
+  const teamTrainings = db.trainings.filter(t=>t.teamId===seasonTeamFilter);
+  const attRows = players.map(p=>{
+    let tot=0, present=0, fj=0, fi=0, tarde=0;
+    teamTrainings.forEach(t=>{
+      const rec = t.attendance[p.id];
+      if (!rec) return;
+      tot++;
+      if (['asistio','tarde'].includes(rec.status)) present++;
+      if (rec.status==='fj') fj++;
+      if (rec.status==='fi') fi++;
+      if (rec.status==='tarde') tarde++;
+    });
+    const pct = tot ? Math.round((present/tot)*1000)/10 : 0;
+    return [p.number!=null?p.number:'', fullName(p), tot, pct+'%', fj, fi, tarde];
+  });
+  const wsAtt = XLSX.utils.aoa_to_sheet([['Dorsal','Jugadora','Entrenos con registro','% Asistencia','F. Justificada','F. Injustificada','Tarde'], ...attRows]);
+  wsAtt['!cols'] = [{wch:8},{wch:22},{wch:14},{wch:12},{wch:14},{wch:16},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, wsAtt, 'Asistencia');
+
+  const teamTests = db.tests.filter(t=>t.teamId===seasonTeamFilter);
+  if (teamTests.length) {
+    const testRows = [];
+    teamTests.forEach(t=>{
+      players.forEach(p=>{
+        const r = t.results[p.id];
+        if (!r || !r.attempts || !r.attempts.length) return;
+        const best = Math.max(...r.attempts.map(a=>parseFloat(a.value)||0));
+        testRows.push([t.name, t.date, p.number!=null?p.number:'', fullName(p), best, t.unit||'']);
+      });
+    });
+    const wsTests = XLSX.utils.aoa_to_sheet([['Test','Fecha','Dorsal','Jugadora','Mejor marca','Unidad'], ...testRows]);
+    wsTests['!cols'] = [{wch:20},{wch:12},{wch:8},{wch:22},{wch:12},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, wsTests, 'Tests físicos');
+  }
+
+  const teamPlayerIds = players.map(p=>p.id);
+  const teamInjuries = db.injuries.filter(i=>teamPlayerIds.includes(i.playerId));
+  if (teamInjuries.length) {
+    const injRows = teamInjuries.map(i=>{
+      const p = db.players.find(x=>x.id===i.playerId);
+      return [p?fullName(p):'—', i.type, i.zone, i.severity, i.date, i.recovered?'Sí':'No', i.recoveredDate||'', i.expected||'', i.notes||''];
+    });
+    const wsInj = XLSX.utils.aoa_to_sheet([['Jugadora','Tipo','Zona','Gravedad','Fecha','Recuperada','Alta real','Alta esperada','Notas'], ...injRows]);
+    wsInj['!cols'] = [{wch:22},{wch:16},{wch:12},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, wsInj, 'Lesiones');
+  }
+
+  XLSX.writeFile(wb, `temporada_${team.name}_${new Date().toISOString().slice(0,10)}.xlsx`.replace(/\s+/g,'_'));
+  showToast('Excel de temporada descargado');
+}
+
 seedDefaultUsers();
 const savedUserId = localStorage.getItem(SESSION_KEY);
 const savedUser = savedUserId ? db.users.find(u=>u.id===savedUserId) : null;
