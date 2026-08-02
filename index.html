@@ -3002,7 +3002,10 @@ function renderSeason(el) {
   currentStatsScope = { matches: teamMatches, label: scopeLabel };
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Estadísticas de temporada</div><div class="page-sub">Elige ver toda la temporada, un solo partido, o una selección de partidos</div></div>
-      <button class="btn-add" onclick="openCompareModal()">Comparar jugadoras</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="downloadSeasonExcel()">⬇ Excel de temporada</button>
+        <button class="btn-add" onclick="openCompareModal()">Comparar jugadoras</button>
+      </div>
     </div>
     <div class="gold-line"></div>
     ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Crea un equipo primero.</div></div>' : `
