@@ -3325,15 +3325,6 @@ function downloadMatchCSVFallback(matchId) {
   showToast('Sin conexión a internet: descargando en CSV (varios archivos)…');
 }
 
-
-const DEMO_SEEDED_KEY = DB_KEY + '_demoSeeded';
-if (!db.teams.length && !db.players.length && !localStorage.getItem(DEMO_SEEDED_KEY)) {
-  createDemoTeamsAndPlayers();
-  saveDB();
-  localStorage.setItem(DEMO_SEEDED_KEY, '1');
-  setTimeout(()=>showToast('Datos de ejemplo cargados automáticamente: equipos, jugadoras, entrenos, tests, lesiones y partidos'), 400);
-}
-
 seedDefaultUsers();
 const savedUserId = localStorage.getItem(SESSION_KEY);
 const savedUser = savedUserId ? db.users.find(u=>u.id===savedUserId) : null;
