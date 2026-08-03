@@ -583,6 +583,30 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-new-season">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><div class="modal-title">🔄 Nueva Temporada</div><button class="btn-close" onclick="closeModal('modal-new-season')">×</button></div>
+    <div class="hint" style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Crea el equipo nuevo y elige qué jugadoras del equipo anterior se vienen contigo. El equipo anterior se archivará (no se borra nada, sigue disponible en Temporada y en las fichas de las jugadoras).</div>
+    <div class="form-group">
+      <label>Equipo de origen</label>
+      <select id="new-season-source-team" onchange="onNewSeasonSourceChange(this.value)"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre del equipo nuevo</label><input type="text" id="new-season-name" placeholder="Ej: Juvenil A"></div>
+      <div class="form-group"><label>Categoría</label><input type="text" id="new-season-category" placeholder="Ej: Juvenil"></div>
+    </div>
+    <div class="form-group"><label>Temporada</label><input type="text" id="new-season-season" placeholder="Ej: 2027/28"></div>
+    <div class="card-header" style="margin-top:10px"><div class="card-title">Jugadoras que se vienen al equipo nuevo</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-secondary btn-sm" onclick="selectAllNewSeasonPlayers()">Todas</button>
+        <button class="btn-secondary btn-sm" onclick="newSeasonSelectedPlayers=new Set();renderNewSeasonPlayerChecks()">Ninguna</button>
+      </div>
+    </div>
+    <div class="checkbox-list" id="new-season-players-check" style="max-height:220px"></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-confirm" onclick="confirmNewSeason()">Crear equipo y migrar jugadoras</button></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:420px">
     <div class="modal-header"><div class="modal-title">Confirmar</div><button class="btn-close" onclick="closeModal('modal-confirm')">×</button></div>
@@ -682,6 +706,7 @@ function normalizeDB(data) {
     if (t.colorIdx===undefined) t.colorIdx = i;
     if (t.category===undefined) t.category = '';
     if (t.season===undefined) t.season = '';
+    if (t.archived===undefined) t.archived = false;
   } catch(e) { console.error('Equipo dañado', e); } });
   data.players.forEach(p=>{ try {
     if (p.lastname===undefined) p.lastname = '';
@@ -910,6 +935,61 @@ const CHART_PALETTE = [
   '#1a3f7a', '#e0468a', '#0e8a7a', '#8b1a2e', '#5a8c1a', '#4a4a8f',
   '#b5541c', '#0d766e', '#a83279', '#3a6b1e',
 ];
+/* ================= NUEVA TEMPORADA (migrar jugadoras de un equipo a otro nuevo) ================= */
+let newSeasonSourceTeamId = null;
+let newSeasonSelectedPlayers = new Set();
+function openNewSeasonWizard() {
+  const activeTeamsList = visibleTeams();
+  if (!activeTeamsList.length) return showToast('No hay equipos activos para migrar. Crea o reactiva uno primero.');
+  newSeasonSourceTeamId = activeTeamsList[0].id;
+  document.getElementById('new-season-source-team').innerHTML = activeTeamsList.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('new-season-name').value = '';
+  document.getElementById('new-season-category').value = '';
+  document.getElementById('new-season-season').value = '';
+  selectAllNewSeasonPlayers();
+  openModal('modal-new-season');
+}
+function onNewSeasonSourceChange(id) {
+  newSeasonSourceTeamId = id;
+  selectAllNewSeasonPlayers();
+}
+function selectAllNewSeasonPlayers() {
+  const players = db.players.filter(p=>p.teams.includes(newSeasonSourceTeamId));
+  newSeasonSelectedPlayers = new Set(players.map(p=>p.id));
+  renderNewSeasonPlayerChecks();
+}
+function toggleNewSeasonPlayer(id) {
+  newSeasonSelectedPlayers.has(id) ? newSeasonSelectedPlayers.delete(id) : newSeasonSelectedPlayers.add(id);
+  renderNewSeasonPlayerChecks();
+}
+function renderNewSeasonPlayerChecks() {
+  const players = db.players.filter(p=>p.teams.includes(newSeasonSourceTeamId)).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
+  document.getElementById('new-season-players-check').innerHTML = players.length
+    ? players.map(p=>`<label class="squad-row"><input type="checkbox" ${newSeasonSelectedPlayers.has(p.id)?'checked':''} onchange="toggleNewSeasonPlayer('${p.id}')"> ${fullName(p)}</label>`).join('')
+    : '<div class="empty-text" style="padding:8px">Este equipo no tiene jugadoras.</div>';
+}
+function confirmNewSeason() {
+  const name = document.getElementById('new-season-name').value.trim();
+  const category = document.getElementById('new-season-category').value.trim();
+  const season = document.getElementById('new-season-season').value.trim();
+  if (!name) return showToast('Ponle un nombre al equipo nuevo');
+  const sourceTeam = db.teams.find(t=>t.id===newSeasonSourceTeamId);
+  if (!sourceTeam) return showToast('Selecciona el equipo de origen');
+  const newTeam = { id: uid(), name, category, season, colorIdx: db.teams.length, archived: false };
+  db.teams.push(newTeam);
+  newSeasonSelectedPlayers.forEach(pid=>{
+    const p = db.players.find(x=>x.id===pid);
+    if (p && !p.teams.includes(newTeam.id)) p.teams.push(newTeam.id);
+  });
+  sourceTeam.archived = true;
+  saveDB();
+  closeModal('modal-new-season');
+  selectedTeamFilter = newTeam.id;
+  goScreen('teams');
+  showToast(`Equipo "${name}" creado con ${newSeasonSelectedPlayers.size} jugadora(s). "${sourceTeam.name}" se ha archivado.`);
+}
+
+function visibleTeams() { return db.teams.filter(t=>!t.archived); }
 function getTeamColor(team) {
   if (!team) return TEAM_PALETTE[0];
   const idx = team.colorIdx !== undefined ? team.colorIdx : db.teams.findIndex(x=>x.id===team.id);
@@ -1120,31 +1200,61 @@ function renderHome(el) {
 
 /* ================= EQUIPOS ================= */
 let selectedTeamFilter = null;
+let showArchivedTeams = false;
+function toggleShowArchivedTeams() { showArchivedTeams = !showArchivedTeams; render(); }
+function archiveTeam(id) {
+  const t = db.teams.find(x=>x.id===id);
+  if (!t) return;
+  showConfirm(`¿Archivar "${t.name}"? No se borra nada: podrás verlo y consultarlo cuando quieras desde "Ver archivados" o desde Temporada.`, () => {
+    t.archived = true;
+    saveDB();
+    if (selectedTeamFilter===id) selectedTeamFilter = null;
+    render();
+    showToast('Equipo archivado');
+  });
+}
+function unarchiveTeam(id) {
+  const t = db.teams.find(x=>x.id===id);
+  if (!t) return;
+  t.archived = false;
+  saveDB();
+  render();
+  showToast('Equipo reactivado');
+}
 function renderTeams(el) {
-  if (!selectedTeamFilter && db.teams.length) selectedTeamFilter = db.teams[0].id;
+  const visible = showArchivedTeams ? db.teams.slice() : visibleTeams();
+  if ((!selectedTeamFilter || !visible.some(t=>t.id===selectedTeamFilter)) && visible.length) selectedTeamFilter = visible[0].id;
   const selectedTeam = db.teams.find(t=>t.id===selectedTeamFilter);
   const c = getTeamColor(selectedTeam);
+  const archivedCount = db.teams.filter(t=>t.archived).length;
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Equipos</div><div class="page-sub">Crea tus equipos por categoría y temporada</div></div>
-      <button class="btn-add" onclick="openNewTeamModal()">+ Equipo</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="openNewSeasonWizard()">🔄 Nueva Temporada</button>
+        <button class="btn-add" onclick="openNewTeamModal()">+ Equipo</button>
+      </div>
     </div>
     <div class="gold-line"></div>
-    ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Aún no hay equipos. Crea el primero con el botón de arriba.</div></div>' : `
+    ${archivedCount ? `<div style="margin-bottom:12px"><button class="btn-secondary btn-sm" onclick="toggleShowArchivedTeams()">${showArchivedTeams ? 'Ocultar archivados' : `Ver equipos archivados (${archivedCount})`}</button></div>` : ''}
+    ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Aún no hay equipos. Crea el primero con el botón de arriba.</div></div>' : (visible.length===0 ? '<div class="empty-state"><div class="empty-text">Todos tus equipos están archivados. Pulsa "Ver equipos archivados" para verlos.</div></div>' : `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-      ${db.teams.map(t=>{
+      ${visible.map(t=>{
         const tc = getTeamColor(t);
         const active = selectedTeamFilter===t.id;
         const style = active ? `background:${tc.bg};border-color:${tc.bg};color:#fff` : `border-color:${tc.bg};color:${tc.bg}`;
-        return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="selectedTeamFilter='${t.id}';render()">${t.name}</button>`;
+        return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="selectedTeamFilter='${t.id}';render()">${t.name}${t.archived?' <span style="opacity:0.7">(archivado)</span>':''}</button>`;
       }).join('')}
     </div>
     <div class="team-banner" style="background:${c.bg}">
       <div>
-        <div class="team-banner-name">${selectedTeam ? selectedTeam.name : ''}</div>
+        <div class="team-banner-name">${selectedTeam ? selectedTeam.name : ''}${selectedTeam && selectedTeam.archived ? ' <span style="font-size:12px;font-weight:600;opacity:0.85">(archivado)</span>' : ''}</div>
         <div class="team-banner-sub">${[selectedTeam?.category, selectedTeam?.season].filter(Boolean).join(' · ') || 'Sin categoría/temporada'} · ${db.players.filter(p=>p.teams.includes(selectedTeamFilter)).length} jugadoras</div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-banner" onclick="editTeam('${selectedTeamFilter}')">Editar</button>
+        ${selectedTeam && selectedTeam.archived
+          ? `<button class="btn-banner" onclick="unarchiveTeam('${selectedTeamFilter}')">↩ Reactivar</button>`
+          : `<button class="btn-banner" onclick="archiveTeam('${selectedTeamFilter}')">🗄 Archivar</button>`}
         <button class="btn-banner danger" onclick="deleteTeam('${selectedTeamFilter}')">Eliminar</button>
       </div>
     </div>
@@ -1152,7 +1262,7 @@ function renderTeams(el) {
       <div class="card-header"><div class="card-title">Jugadoras de este equipo</div><button class="btn-add btn-sm" onclick="openNewPlayerModal(selectedTeamFilter)">+ Jugadora</button></div>
       ${renderTeamPlayersList()}
     </div>
-    `}
+    `)}
   `;
 }
 function renderTeamPlayersList() {
@@ -1246,7 +1356,15 @@ function attendanceLabel(id) { return (ATTENDANCE_STATUSES.find(s=>s.id===id)||{
 function attendanceCls(id) { return (ATTENDANCE_STATUSES.find(s=>s.id===id)||{}).cls || 'badge-navy'; }
 
 let trainingsTeamFilter = 'all';
-function setTrainingsTeamFilter(id) { trainingsTeamFilter = id; render(); }
+let trainingsMonthFilter = new Set(); // vacío = todos los meses
+function setTrainingsTeamFilter(id) { trainingsTeamFilter = id; trainingsMonthFilter = new Set(); render(); }
+function toggleTrainingsMonthFilter(ym) { trainingsMonthFilter.has(ym) ? trainingsMonthFilter.delete(ym) : trainingsMonthFilter.add(ym); render(); }
+function clearTrainingsMonthFilter() { trainingsMonthFilter = new Set(); render(); }
+const MONTH_NAMES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function monthLabel(ym) {
+  const [y,m] = ym.split('-');
+  return `${MONTH_NAMES_ES[parseInt(m,10)-1]} ${y}`;
+}
 function renderTrainings(el) {
   if (!db.teams.length) {
     el.innerHTML = `
@@ -1257,7 +1375,9 @@ function renderTrainings(el) {
     return;
   }
   const filtered = trainingsTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===trainingsTeamFilter);
-  const sorted = filtered.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  const availableMonths = Array.from(new Set(filtered.filter(t=>t.date).map(t=>t.date.slice(0,7)))).sort();
+  const monthFiltered = trainingsMonthFilter.size ? filtered.filter(t=> t.date && trainingsMonthFilter.has(t.date.slice(0,7))) : filtered;
+  const sorted = monthFiltered.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Entrenos</div><div class="page-sub">Registro de entrenamientos y asistencia por jugadora</div></div>
       <button class="btn-add" onclick="openNewTrainingModal()">+ Entreno</button>
@@ -1265,13 +1385,28 @@ function renderTrainings(el) {
     <div class="gold-line"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${trainingsTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${trainingsTeamFilter==='all'?'var(--navy)':'white'};color:${trainingsTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setTrainingsTeamFilter('all')">Todos</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = trainingsTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
         return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="setTrainingsTeamFilter('${t.id}')">${t.name}</button>`;
       }).join('')}
     </div>
+    ${availableMonths.length ? `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title">Filtrar por mes</div>
+        <button class="btn-secondary btn-sm" onclick="clearTrainingsMonthFilter()">Todos los meses</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${availableMonths.map(ym=>{
+          const active = trainingsMonthFilter.has(ym);
+          return `<label style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid ${active?'var(--navy)':'var(--gray-200)'};border-radius:10px;padding:8px 14px;cursor:pointer;background:${active?'var(--navy)':'white'};color:${active?'#fff':'var(--navy)'};font-weight:600;font-size:13px;text-transform:capitalize">
+            <input type="checkbox" style="display:none" ${active?'checked':''} onchange="toggleTrainingsMonthFilter('${ym}')" onclick="toggleTrainingsMonthFilter('${ym}');return false;">
+            ${monthLabel(ym)}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
     ${sorted.length===0 ? '<div class="empty-state"><div class="empty-text">No hay entrenos registrados para este filtro.</div></div>' : sorted.map(t=>trainingRowHTML(t)).join('')}
   `;
 }
@@ -1392,7 +1527,7 @@ function renderTests(el) {
     <div class="gold-line"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${testsTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${testsTeamFilter==='all'?'var(--navy)':'white'};color:${testsTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setTestsTeamFilter('all')">Todos</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = testsTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
@@ -1632,7 +1767,7 @@ function renderStatsComparison(el) {
     ${db.teams.length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn-sm" style="border:1.5px solid ${compareTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${compareTeamFilter==='all'?'var(--navy)':'white'};color:${compareTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setCompareTeamFilter('all')">Todos</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = compareTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
@@ -1792,7 +1927,7 @@ function renderInjuries(el) {
     ${db.teams.length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn-sm" style="border:1.5px solid ${injuriesTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${injuriesTeamFilter==='all'?'var(--navy)':'white'};color:${injuriesTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setInjuriesTeamFilter('all')">Todos</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = injuriesTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
@@ -1912,7 +2047,7 @@ function renderPlayers(el) {
     ${db.teams.length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${playersTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${playersTeamFilter==='all'?'var(--navy)':'white'};color:${playersTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setPlayersTeamFilter('all')">Todas</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = playersTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
@@ -1949,7 +2084,7 @@ function buildPlayerTeamChecks(selectedTeams) {
   if (!db.teams.length) { container.innerHTML = '<div class="empty-text">Crea antes un equipo en la sección Equipos.</div>'; return; }
   container.innerHTML = db.teams.map(t=>{
     const checked = selectedTeams && selectedTeams.includes(t.id) ? 'checked' : '';
-    return `<label class="team-chip"><input type="checkbox" value="${t.id}" ${checked}> ${t.name}</label>`;
+    return `<label class="team-chip"><input type="checkbox" value="${t.id}" ${checked}> ${t.name}${t.archived?' (archivado)':''}</label>`;
   }).join('');
 }
 function openNewPlayerModal(preselectTeamId) {
@@ -2331,7 +2466,7 @@ function renderMatches(el) {
     ${db.teams.length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${matchesTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${matchesTeamFilter==='all'?'var(--navy)':'white'};color:${matchesTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setMatchesTeamFilter('all')">Todos</button>
-      ${db.teams.map(t=>{
+      ${visibleTeams().map(t=>{
         const c = getTeamColor(t);
         const active = matchesTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
@@ -3014,7 +3149,7 @@ function renderSeason(el) {
         const c = getTeamColor(t);
         const active = seasonTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
-        return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="setSeasonTeam('${t.id}')">${t.name}</button>`;
+        return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="setSeasonTeam('${t.id}')">${t.name}${t.archived?' <span style="opacity:0.6;font-weight:400">(archivado)</span>':''}</button>`;
       }).join('')}
     </div>
     <div class="tab-bar">
