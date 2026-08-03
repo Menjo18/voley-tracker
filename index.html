@@ -159,13 +159,13 @@
   .squad-row .squad-name { flex:1; font-size:13.5px; }
   .squad-row .starter-lbl { font-size:11px; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:4px; }
   .live-header { background: var(--navy); border-radius: var(--radius-md); padding:16px 20px; color:white; margin-bottom:16px; }
-  .live-header-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-  .live-vs { font-size:17px; font-weight:700; }
-  .live-meta { font-size:12.5px; color:rgba(255,255,255,0.7); margin-top:2px; }
-  .set-control { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.12); border-radius:10px; padding:6px 10px; }
-  .set-control button { width:28px; height:28px; border-radius:8px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:700; cursor:pointer; font-size:16px; }
+  .live-vs { font-size:13.5px; font-weight:700; }
+  .live-meta { font-size:10.5px; color:rgba(255,255,255,0.65); margin-top:1px; }
+  .live-match-info { flex:1; min-width:140px; }
+  .set-control { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.12); border-radius:8px; padding:4px 8px; }
+  .set-control button { width:22px; height:22px; border-radius:6px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:700; cursor:pointer; font-size:13px; }
   .set-control button:hover { background:rgba(255,255,255,0.3); }
-  .set-control .set-num { font-weight:700; min-width:60px; text-align:center; font-size:14px; }
+  .set-control .set-num { font-weight:700; min-width:44px; text-align:center; font-size:11.5px; }
   .score-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15); }
   .score-box { text-align:center; }
   .live-top-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
@@ -2611,10 +2611,6 @@ function renderLive(el) {
   el.innerHTML = `
     <button class="btn-back" onclick="goScreen('matches')">← Volver a partidos</button>
     <div class="live-header" style="border-left:5px solid ${getTeamColor(team).bg}">
-      <div class="live-header-top">
-        <div><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones registradas</div></div>
-        <div class="set-control"><button onclick="changeSet(-1)">−</button><div class="set-num">Set ${m.currentSet}</div><button onclick="changeSet(1)">+</button></div>
-      </div>
       <div class="live-top-row">
         ${rotationBoxHTML(m)}
         <div class="score-row">
@@ -2628,6 +2624,8 @@ function renderLive(el) {
           <button class="btn-timeout" ${awayTOs>=2?'disabled':''} onclick="requestTimeout('away')">⏱ Tiempo muerto (${awayTOs}/2)</button>
         </div>
       </div>
+      <div class="set-control"><button onclick="changeSet(-1)">−</button><div class="set-num">Set ${m.currentSet}</div><button onclick="changeSet(1)">+</button></div>
+      <div class="live-match-info"><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones</div></div>
       </div>
       ${setsSummary(m) ? `<div class="sets-summary">${setsSummary(m)}</div>` : ''}
     </div>
