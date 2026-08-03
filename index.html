@@ -168,6 +168,16 @@
   .set-control .set-num { font-weight:700; min-width:60px; text-align:center; font-size:14px; }
   .score-row { display:flex; align-items:center; justify-content:center; gap:18px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15); }
   .score-box { text-align:center; }
+  .rotation-box { background:rgba(255,255,255,0.06); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+  .rotation-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,0.6); margin-bottom:8px; }
+  .rotation-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:360px; }
+  .rotation-cell { background:rgba(255,255,255,0.08); border-radius:7px; padding:6px 4px; text-align:center; }
+  .rotation-cell-label { font-size:9.5px; font-weight:700; color:var(--gold-light); margin-bottom:3px; }
+  .rotation-cell select { width:100%; font-size:11px; padding:3px 2px; border-radius:5px; border:none; background:white; color:var(--navy); font-weight:600; }
+  .rotation-net-label { font-size:9.5px; color:rgba(255,255,255,0.4); text-align:center; max-width:360px; margin-top:2px; }
+  .rotation-controls { display:flex; gap:8px; margin-top:8px; }
+  .live-notes-details { background:white; border:1.5px solid var(--gray-200); border-radius:10px; padding:10px 14px; margin-bottom:14px; }
+  .live-notes-details summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--navy); }
   .score-label { font-size:12px; color:rgba(255,255,255,0.75); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
   .score-controls { display:flex; align-items:center; gap:10px; }
   .score-controls button { width:34px; height:34px; border-radius:9px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:800; font-size:19px; cursor:pointer; }
@@ -607,6 +617,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-finish-match-notes">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header"><div class="modal-title">Antes de cerrar el partido</div></div>
+    <div style="font-size:13.5px;color:var(--gray-600);margin-bottom:12px">¿Algo sobre el rival que te venga bien tener a mano la próxima vez que os enfrentéis? (de dónde saca, quién remata más, patrones de bloqueo...)</div>
+    <textarea id="finish-match-notes-textarea" placeholder="Ej. Sacan mucho a zona 5, su rematadora nº7 pega fuerte por 4, probar bloqueo doble..." style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:13.5px;resize:vertical;margin-bottom:14px"></textarea>
+    <div class="btn-row"><button class="btn-confirm" onclick="finishMatchWithNotes()">Guardar y finalizar</button></div>
+    <div class="btn-row"><button class="btn-secondary" onclick="finishMatchWithoutNotes()">Finalizar sin anotar nada</button></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:420px">
     <div class="modal-header"><div class="modal-title">Confirmar</div><button class="btn-close" onclick="closeModal('modal-confirm')">×</button></div>
@@ -747,7 +767,8 @@ function normalizeDB(data) {
       if (m.jornada===undefined) m.jornada = '';
       if (!m.timeouts) m.timeouts = [];
       if (m.notes===undefined) m.notes = '';
-      m.actions.forEach(a=>{ if (a.zone===undefined) a.zone = null; });
+      if (!m.rotationBySet) m.rotationBySet = {};
+      m.actions.forEach(a=>{ if (a.zone===undefined) a.zone = null; if (a.rotationPos===undefined) a.rotationPos = null; });
       if (!m.presence) {
         // Compatibilidad con partidos creados antes de esta función: arrancamos el registro desde ahora.
         m.presence = (m.activePlayerIds||[]).map(id=>({ playerId:id, set:m.currentSet||1, type:'in', ts:Date.now(), home:0, away:0 }));
@@ -2592,6 +2613,7 @@ function renderLive(el) {
         <div><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones registradas</div></div>
         <div class="set-control"><button onclick="changeSet(-1)">−</button><div class="set-num">Set ${m.currentSet}</div><button onclick="changeSet(1)">+</button></div>
       </div>
+      ${rotationBoxHTML(m)}
       <div class="score-row">
         <div class="score-box"><div class="score-label">${team?team.name:'Nuestro equipo'}</div>
           <div class="score-controls"><button onclick="scoreChange('home',-1)">−</button><div class="score-val">${score.home}</div><button onclick="scoreChange('home',1)">+</button></div>
@@ -2608,6 +2630,10 @@ function renderLive(el) {
 
     ${pendingSubPlayerId ? `<div class="sub-banner"><span>Elige quién sale a cambio de ${playerLabel(pendingSubPlayerId)}</span><button class="btn-secondary btn-sm" onclick="cancelSub()">Cancelar</button></div>` : ''}
     ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet)) >= NEGATIVE_STREAK_THRESHOLD ? `<div class="streak-banner">🔥 ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet))} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</div>` : ''}
+    <details class="live-notes-details">
+      <summary>📝 Notas del partido (rival, ajustes para la vuelta...) ${m.notes ? '· con contenido' : ''}</summary>
+      <textarea id="live-notes-textarea" placeholder="Ej. Sacan mucho a zona 5, su rematadora nº7 pega fuerte por 4, probar bloqueo doble..." style="width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:13.5px;resize:vertical;margin-top:8px" onblur="saveMatchNotes('${m.id}', 'live-notes-textarea')">${m.notes || ''}</textarea>
+    </details>
 
     <div class="section-title">Registrar acción — barrido izquierda a derecha</div>
     <div class="tracker-grid">
@@ -2724,11 +2750,56 @@ function benchClick(pid) {
   renderLive(document.getElementById('main-content'));
 }
 function cancelSub() { pendingSubPlayerId = null; renderLive(document.getElementById('main-content')); }
+function getRotationArray(m) {
+  if (!m.rotationBySet) m.rotationBySet = {};
+  if (!m.rotationBySet[m.currentSet]) m.rotationBySet[m.currentSet] = [null,null,null,null,null,null];
+  return m.rotationBySet[m.currentSet];
+}
+function setRotationSlot(posIdx, playerId) {
+  const m = db.matches.find(x=>x.id===liveMatchId);
+  const rot = getRotationArray(m);
+  rot[posIdx] = playerId || null;
+  saveDB();
+  renderLive(document.getElementById('main-content'));
+}
+function rotateRotation(dir) {
+  const m = db.matches.find(x=>x.id===liveMatchId);
+  const rot = getRotationArray(m);
+  if (dir > 0) { rot.push(rot.shift()); } else { rot.unshift(rot.pop()); }
+  saveDB();
+  renderLive(document.getElementById('main-content'));
+}
+function rotationBoxHTML(m) {
+  const rot = getRotationArray(m);
+  const active = db.players.filter(p=>m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0));
+  const options = (selected) => `<option value="">-</option>` + active.map(p=>`<option value="${p.id}" ${selected===p.id?'selected':''}>#${p.number!=null?p.number:'-'} ${p.name}</option>`).join('');
+  const cell = (posIdx, label) => `
+    <div class="rotation-cell">
+      <div class="rotation-cell-label">${label}</div>
+      <select onchange="setRotationSlot(${posIdx}, this.value)">${options(rot[posIdx])}</select>
+    </div>`;
+  return `
+  <div class="rotation-box">
+    <div class="rotation-title">Rotación</div>
+    <div class="rotation-grid">
+      ${cell(3,'P4')}${cell(2,'P3')}${cell(1,'P2')}
+      ${cell(4,'P5')}${cell(5,'P6')}${cell(0,'P1')}
+    </div>
+    <div class="rotation-net-label">red ↑</div>
+    <div class="rotation-controls">
+      <button class="btn-secondary btn-sm" onclick="rotateRotation(-1)">◀ Anterior</button>
+      <button class="btn-secondary btn-sm" onclick="rotateRotation(1)">Siguiente ▶</button>
+    </div>
+  </div>`;
+}
 function doSubstitution(inId, outId) {
   const m = db.matches.find(x=>x.id===liveMatchId);
   const idx = m.activePlayerIds.indexOf(outId);
   if (idx === -1) { pendingSubPlayerId = null; return; }
   m.activePlayerIds[idx] = inId;
+  const rot = getRotationArray(m);
+  const rotIdx = rot.indexOf(outId);
+  if (rotIdx !== -1) rot[rotIdx] = inId;
   const score = m.setScores[m.currentSet] || { home:0, away:0 };
   const ts = Date.now();
   m.substitutions.push({ set:m.currentSet, in:inId, out:outId, ts, score:{ home:score.home, away:score.away } });
@@ -2775,7 +2846,10 @@ function requestTimeout(side) {
 function recordAction(actionId, ratingId) {
   const m = db.matches.find(x=>x.id===liveMatchId);
   if (!selectedPlayerId) return showToast('Selecciona primero una jugadora en pista');
-  const newAction = { id:uid(), playerId:selectedPlayerId, action:actionId, rating:ratingId, set:m.currentSet, ts:Date.now(), zone:null };
+  const newAction = { id:uid(), playerId:selectedPlayerId, action:actionId, rating:ratingId, set:m.currentSet, ts:Date.now(), zone:null, rotationPos:null };
+  const rot = getRotationArray(m);
+  const rotIdx = rot.indexOf(selectedPlayerId);
+  if (rotIdx !== -1) newAction.rotationPos = rotIdx + 1;
   m.actions.push(newAction);
   lastActionId = newAction.id;
   saveDB();
@@ -2790,7 +2864,30 @@ function undoLastAction() {
   saveDB(); showToast('Última acción deshecha');
   renderLive(document.getElementById('main-content'));
 }
+let pendingFinishMatchId = null;
 function finishMatch(id) {
+  const liveTa = document.getElementById('live-notes-textarea');
+  const m = db.matches.find(x=>x.id===id);
+  if (liveTa && m) m.notes = liveTa.value;
+  if (m && !m.notes) {
+    pendingFinishMatchId = id;
+    document.getElementById('finish-match-notes-textarea').value = '';
+    openModal('modal-finish-match-notes');
+    return;
+  }
+  finishMatchConfirmed(id);
+}
+function finishMatchWithNotes() {
+  const m = db.matches.find(x=>x.id===pendingFinishMatchId);
+  if (m) { m.notes = document.getElementById('finish-match-notes-textarea').value; saveDB(); }
+  closeModal('modal-finish-match-notes');
+  finishMatchConfirmed(pendingFinishMatchId);
+}
+function finishMatchWithoutNotes() {
+  closeModal('modal-finish-match-notes');
+  finishMatchConfirmed(pendingFinishMatchId);
+}
+function finishMatchConfirmed(id) {
   showConfirm('¿Finalizar este partido? Podrás seguir viendo, editando y descargando sus estadísticas.', () => {
     const m = db.matches.find(x=>x.id===id);
     m.status = 'finished'; saveDB();
@@ -2805,10 +2902,10 @@ function reopenMatch(id) {
   showToast('Partido reabierto para editar');
   openLive(id);
 }
-function saveMatchNotes(matchId) {
+function saveMatchNotes(matchId, textareaId) {
   const m = db.matches.find(x=>x.id===matchId);
   if (!m) return;
-  const ta = document.getElementById('match-notes-textarea');
+  const ta = document.getElementById(textareaId || 'match-notes-textarea');
   if (!ta) return;
   m.notes = ta.value;
   saveDB();
