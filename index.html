@@ -2774,11 +2774,11 @@ function rotateRotation(dir) {
 function rotationBoxHTML(m) {
   const rot = getRotationArray(m);
   const active = db.players.filter(p=>m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0));
-  const options = (selected) => `<option value="">-</option>` + active.map(p=>`<option value="${p.id}" ${selected===p.id?'selected':''}>#${p.number!=null?p.number:'-'} ${p.name}</option>`).join('');
+  const options = (selected) => `<option value="">-</option>` + active.map(p=>`<option value="${p.id}" ${selected===p.id?'selected':''}>${p.number!=null?p.number:'-'}</option>`).join('');
   const cell = (posIdx, label) => `
     <div class="rotation-cell">
       <div class="rotation-cell-label">${label}</div>
-      <select onchange="setRotationSlot(${posIdx}, this.value)">${options(rot[posIdx])}</select>
+      <select onchange="setRotationSlot(${posIdx}, this.value)" title="${rot[posIdx] ? (active.find(p=>p.id===rot[posIdx])?.name || '') : ''}">${options(rot[posIdx])}</select>
     </div>`;
   return `
   <div class="rotation-box">
