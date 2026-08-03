@@ -166,26 +166,28 @@
   .set-control button { width:28px; height:28px; border-radius:8px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:700; cursor:pointer; font-size:16px; }
   .set-control button:hover { background:rgba(255,255,255,0.3); }
   .set-control .set-num { font-weight:700; min-width:60px; text-align:center; font-size:14px; }
-  .score-row { display:flex; align-items:center; justify-content:center; gap:18px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15); }
+  .score-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15); }
   .score-box { text-align:center; }
-  .rotation-box { background:rgba(255,255,255,0.06); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
-  .rotation-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,0.6); margin-bottom:8px; }
-  .rotation-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:360px; }
-  .rotation-cell { background:rgba(255,255,255,0.08); border-radius:7px; padding:6px 4px; text-align:center; }
-  .rotation-cell-label { font-size:9.5px; font-weight:700; color:var(--gold-light); margin-bottom:3px; }
-  .rotation-cell select { width:100%; font-size:11px; padding:3px 2px; border-radius:5px; border:none; background:white; color:var(--navy); font-weight:600; }
-  .rotation-net-label { font-size:9.5px; color:rgba(255,255,255,0.4); text-align:center; max-width:360px; margin-top:2px; }
-  .rotation-controls { display:flex; gap:8px; margin-top:8px; }
+  .live-top-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .rotation-box { background:rgba(255,255,255,0.06); border-radius:8px; padding:6px 8px; }
+  .rotation-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:rgba(255,255,255,0.55); margin-bottom:3px; }
+  .rotation-grid { display:grid; grid-template-columns:repeat(3,38px); gap:3px; }
+  .rotation-cell { background:rgba(255,255,255,0.08); border-radius:5px; padding:2px 2px; text-align:center; }
+  .rotation-cell-label { font-size:7.5px; font-weight:700; color:var(--gold-light); line-height:1; }
+  .rotation-cell select { width:100%; font-size:9px; padding:1px; border-radius:3px; border:none; background:white; color:var(--navy); font-weight:600; }
+  .rotation-net-label { font-size:7.5px; color:rgba(255,255,255,0.4); text-align:center; margin-top:1px; }
+  .rotation-controls { display:flex; gap:5px; margin-top:5px; }
+  .rotation-controls button { font-size:10px; padding:4px 7px; }
   .live-notes-details { background:white; border:1.5px solid var(--gray-200); border-radius:10px; padding:10px 14px; margin-bottom:14px; }
   .live-notes-details summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--navy); }
-  .score-label { font-size:12px; color:rgba(255,255,255,0.75); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
-  .score-controls { display:flex; align-items:center; gap:10px; }
-  .score-controls button { width:34px; height:34px; border-radius:9px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:800; font-size:19px; cursor:pointer; }
+  .score-label { font-size:10.5px; color:rgba(255,255,255,0.75); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
+  .score-controls { display:flex; align-items:center; gap:6px; }
+  .score-controls button { width:24px; height:24px; border-radius:6px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:800; font-size:14px; cursor:pointer; }
   .score-controls button:hover { background:var(--gold); color:var(--navy-dark); }
-  .score-val { font-size:38px; font-weight:800; min-width:44px; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,0.2); }
-  .score-vs { font-size:20px; color:rgba(255,255,255,0.5); font-weight:700; }
+  .score-val { font-size:24px; font-weight:800; min-width:30px; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,0.2); }
+  .score-vs { font-size:16px; color:rgba(255,255,255,0.5); font-weight:700; }
   .sets-summary { font-size:11.5px; color:rgba(255,255,255,0.65); margin-top:10px; text-align:center; }
-  .btn-timeout { margin-top:8px; width:100%; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:white; padding:6px 8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; }
+  .btn-timeout { margin-top:4px; width:100%; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.3); color:white; padding:3px 6px; border-radius:6px; font-size:9.5px; font-weight:700; cursor:pointer; }
   .btn-timeout:hover:not(:disabled) { background:var(--gold); color:var(--navy-dark); border-color:var(--gold); }
   .btn-timeout:disabled { opacity:0.35; cursor:not-allowed; }
   .lineup-label { font-size:12px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.3px; margin: 14px 0 6px; }
@@ -2613,8 +2615,9 @@ function renderLive(el) {
         <div><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones registradas</div></div>
         <div class="set-control"><button onclick="changeSet(-1)">−</button><div class="set-num">Set ${m.currentSet}</div><button onclick="changeSet(1)">+</button></div>
       </div>
-      ${rotationBoxHTML(m)}
-      <div class="score-row">
+      <div class="live-top-row">
+        ${rotationBoxHTML(m)}
+        <div class="score-row">
         <div class="score-box"><div class="score-label">${team?team.name:'Nuestro equipo'}</div>
           <div class="score-controls"><button onclick="scoreChange('home',-1)">−</button><div class="score-val">${score.home}</div><button onclick="scoreChange('home',1)">+</button></div>
           <button class="btn-timeout" ${homeTOs>=2?'disabled':''} onclick="requestTimeout('home')">⏱ Tiempo muerto (${homeTOs}/2)</button>
@@ -2624,6 +2627,7 @@ function renderLive(el) {
           <div class="score-controls"><button onclick="scoreChange('away',-1)">−</button><div class="score-val">${score.away}</div><button onclick="scoreChange('away',1)">+</button></div>
           <button class="btn-timeout" ${awayTOs>=2?'disabled':''} onclick="requestTimeout('away')">⏱ Tiempo muerto (${awayTOs}/2)</button>
         </div>
+      </div>
       </div>
       ${setsSummary(m) ? `<div class="sets-summary">${setsSummary(m)}</div>` : ''}
     </div>
