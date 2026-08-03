@@ -1343,6 +1343,20 @@ function saveTeam() {
 }
 function deleteTeam(id) {
   if (!id) return;
+  const team = db.teams.find(t=>t.id===id);
+  if (!team) return;
+  const teamPlayerIds = db.players.filter(p=>p.teams.includes(id)).map(p=>p.id);
+  const hasHistory = db.matches.some(m=>m.teamId===id) || db.trainings.some(t=>t.teamId===id) || db.tests.some(t=>t.teamId===id) || db.injuries.some(i=>teamPlayerIds.includes(i.playerId));
+  if (hasHistory) {
+    showConfirm(`"${team.name}" tiene historial guardado (partidos, entrenos, tests o lesiones). Eliminarlo dejaría ese historial huérfano e inaccesible, sin poder consultarlo nunca más. Si lo que quieres es quitarlo de en medio sin perder nada, usa "Archivar" en su lugar, que es reversible. ¿Aun así quieres eliminarlo definitivamente?`, () => {
+      db.teams = db.teams.filter(t=>t.id!==id);
+      db.players.forEach(p=>{ p.teams = p.teams.filter(tid=>tid!==id); });
+      selectedTeamFilter = db.teams.length ? db.teams[0].id : null;
+      saveDB(); render();
+      showToast('Equipo eliminado');
+    });
+    return;
+  }
   showConfirm('¿Eliminar este equipo? Las jugadoras que solo pertenezcan a este equipo no se borran, solo se les quita de aquí.', () => {
     db.teams = db.teams.filter(t=>t.id!==id);
     db.players.forEach(p=>{ p.teams = p.teams.filter(tid=>tid!==id); });
@@ -3137,7 +3151,7 @@ function toggleSeasonCustomMatch(id) {
   render();
 }
 function renderSeason(el) {
-  if (!seasonTeamFilter && db.teams.length) seasonTeamFilter = db.teams[0].id;
+  if ((!seasonTeamFilter || !teamsForFilter().some(t=>t.id===seasonTeamFilter)) && teamsForFilter().length) seasonTeamFilter = teamsForFilter()[0].id;
   const allTeamMatches = db.matches.filter(m=>m.teamId===seasonTeamFilter).sort((a,b)=> (a.date||'').localeCompare(b.date||''));
   let teamMatches = allTeamMatches;
   if (seasonFilterMode==='single') teamMatches = seasonSingleMatchId ? allTeamMatches.filter(m=>m.id===seasonSingleMatchId) : [];
@@ -3159,7 +3173,8 @@ function renderSeason(el) {
     <div class="gold-line"></div>
     ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Crea un equipo primero.</div></div>' : `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-      ${db.teams.map(t=>{
+      ${archivedToggleButtonHTML()}
+      ${teamsForFilter().map(t=>{
         const c = getTeamColor(t);
         const active = seasonTeamFilter===t.id;
         const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
