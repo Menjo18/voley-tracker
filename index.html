@@ -171,15 +171,13 @@
   .live-top-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
   .rotation-box { background:rgba(255,255,255,0.06); border-radius:8px; padding:6px 8px; }
   .rotation-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:rgba(255,255,255,0.55); margin-bottom:3px; }
-  .rotation-grid { display:grid; grid-template-columns:repeat(3,38px); gap:3px; }
+  .rotation-grid { display:grid; grid-template-columns:repeat(3,46px); gap:3px; }
   .rotation-cell { background:rgba(255,255,255,0.08); border-radius:5px; padding:2px 2px; text-align:center; }
   .rotation-cell-label { font-size:7.5px; font-weight:700; color:var(--gold-light); line-height:1; }
   .rotation-cell select { width:100%; font-size:9px; padding:1px; border-radius:3px; border:none; background:white; color:var(--navy); font-weight:600; }
   .rotation-net-label { font-size:7.5px; color:rgba(255,255,255,0.4); text-align:center; margin-top:1px; }
   .rotation-controls { display:flex; gap:5px; margin-top:5px; }
   .rotation-controls button { font-size:10px; padding:4px 7px; }
-  .live-notes-details { background:white; border:1.5px solid var(--gray-200); border-radius:10px; padding:10px 14px; margin-bottom:14px; }
-  .live-notes-details summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--navy); }
   .score-label { font-size:10.5px; color:rgba(255,255,255,0.75); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
   .score-controls { display:flex; align-items:center; gap:6px; }
   .score-controls button { width:24px; height:24px; border-radius:6px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:800; font-size:14px; cursor:pointer; }
@@ -616,6 +614,15 @@
     </div>
     <div class="checkbox-list" id="new-season-players-check" style="max-height:220px"></div>
     <div class="btn-row" style="margin-top:16px"><button class="btn-confirm" onclick="confirmNewSeason()">Crear equipo y migrar jugadoras</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-live-notes">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header"><div class="modal-title">📝 Notas del partido</div><button class="btn-close" onclick="closeModal('modal-live-notes')">×</button></div>
+    <div class="hint" style="font-size:12.5px;color:var(--gray-600);margin-bottom:10px">Rival, ajustes para la vuelta...</div>
+    <textarea id="live-notes-textarea" placeholder="Ej. Sacan mucho a zona 5, su rematadora nº7 pega fuerte por 4, probar bloqueo doble..." style="width:100%;min-height:120px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:13.5px;resize:vertical;margin-bottom:14px"></textarea>
+    <div class="btn-row"><button class="btn-confirm" onclick="saveLiveNotes()">Guardar</button></div>
   </div>
 </div>
 
@@ -2632,10 +2639,6 @@ function renderLive(el) {
 
     ${pendingSubPlayerId ? `<div class="sub-banner"><span>Elige quién sale a cambio de ${playerLabel(pendingSubPlayerId)}</span><button class="btn-secondary btn-sm" onclick="cancelSub()">Cancelar</button></div>` : ''}
     ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet)) >= NEGATIVE_STREAK_THRESHOLD ? `<div class="streak-banner">🔥 ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet))} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</div>` : ''}
-    <details class="live-notes-details">
-      <summary>📝 Notas del partido (rival, ajustes para la vuelta...) ${m.notes ? '· con contenido' : ''}</summary>
-      <textarea id="live-notes-textarea" placeholder="Ej. Sacan mucho a zona 5, su rematadora nº7 pega fuerte por 4, probar bloqueo doble..." style="width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:13.5px;resize:vertical;margin-top:8px" onblur="saveMatchNotes('${m.id}', 'live-notes-textarea')">${m.notes || ''}</textarea>
-    </details>
 
     <div class="section-title">Registrar acción — barrido izquierda a derecha</div>
     <div class="tracker-grid">
@@ -2680,6 +2683,7 @@ function renderLive(el) {
     <div class="live-controls">
       <button class="btn-secondary" onclick="undoLastAction()">↩ Deshacer última acción</button>
       <button class="btn-secondary" onclick="downloadMatchCSV('${m.id}')">⬇ Descargar Excel del partido</button>
+      <button class="btn-secondary" onclick="openLiveNotesModal('${m.id}')">📝 Notas del partido${m.notes ? ' · con contenido' : ''}</button>
       <button class="btn-danger" onclick="finishMatch('${m.id}')">Finalizar partido</button>
     </div>
 
@@ -2868,9 +2872,7 @@ function undoLastAction() {
 }
 let pendingFinishMatchId = null;
 function finishMatch(id) {
-  const liveTa = document.getElementById('live-notes-textarea');
   const m = db.matches.find(x=>x.id===id);
-  if (liveTa && m) m.notes = liveTa.value;
   if (m && !m.notes) {
     pendingFinishMatchId = id;
     document.getElementById('finish-match-notes-textarea').value = '';
@@ -2903,6 +2905,22 @@ function reopenMatch(id) {
   saveDB();
   showToast('Partido reabierto para editar');
   openLive(id);
+}
+let liveNotesMatchId = null;
+function openLiveNotesModal(matchId) {
+  liveNotesMatchId = matchId;
+  const m = db.matches.find(x=>x.id===matchId);
+  document.getElementById('live-notes-textarea').value = (m && m.notes) || '';
+  openModal('modal-live-notes');
+}
+function saveLiveNotes() {
+  const m = db.matches.find(x=>x.id===liveNotesMatchId);
+  if (!m) return;
+  m.notes = document.getElementById('live-notes-textarea').value;
+  saveDB();
+  closeModal('modal-live-notes');
+  showToast('Notas guardadas');
+  renderLive(document.getElementById('main-content'));
 }
 function saveMatchNotes(matchId, textareaId) {
   const m = db.matches.find(x=>x.id===matchId);
