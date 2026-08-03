@@ -136,6 +136,8 @@
   .match-row { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1.5px solid var(--gray-200); border-radius:12px; margin-bottom:10px; flex-wrap:wrap; gap:10px; background:white; }
   .match-row-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .btn-back { background:none; border:none; color:var(--navy); font-weight:700; font-size:13.5px; cursor:pointer; margin-bottom:14px; display:inline-flex; align-items:center; gap:4px; }
+  .btn-back-ondark { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.35); color:white; font-weight:700; font-size:12px; cursor:pointer; padding:8px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:5px; }
+  .btn-back-ondark:hover { background:rgba(255,255,255,0.22); }
 
   @media (max-width: 720px) {
     .sidenav { width:66px; }
@@ -169,7 +171,6 @@
   .score-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15); }
   .score-box { text-align:center; }
   .live-top-row { display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; }
-  .live-header-divider { border-top:1.5px solid var(--gray-200); margin:12px 0 16px; }
   .rotation-box { background:rgba(255,255,255,0.06); border-radius:8px; padding:6px 8px; }
   .rotation-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:rgba(255,255,255,0.55); margin-bottom:3px; }
   .rotation-grid { display:grid; grid-template-columns:repeat(3,46px); gap:3px; }
@@ -2622,10 +2623,9 @@ function renderLive(el) {
   const awayTOs = (m.timeouts||[]).filter(t=>t.set===m.currentSet && t.side==='away').length;
 
   el.innerHTML = `
-    <button class="btn-back" onclick="goScreen('matches')">← Volver a partidos</button>
-    <div class="live-header-divider"></div>
     <div class="live-header" style="border-left:5px solid ${getTeamColor(team).bg}">
       <div class="live-top-row">
+        <button class="btn-back-ondark" onclick="goScreen('matches')">← Volver</button>
         ${rotationBoxHTML(m)}
         <div class="score-row">
         <div class="score-box"><div class="score-label">${team?team.name:'Nuestro equipo'}</div>
