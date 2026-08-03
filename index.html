@@ -220,23 +220,26 @@
   .player-btn-bench.libero .pnum, .player-btn-bench.libero .pname { color:var(--libero); }
   .player-btn-bench.pending { border-color:var(--gold); background:var(--gold-pale); }
   .sub-banner { background: var(--gold-pale); border:1.5px solid var(--gold); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:700; color:var(--navy-dark); display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
-  .streak-banner { background:var(--danger-bg); border:1.5px solid var(--danger); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:700; color:var(--danger); margin-bottom:10px; }
+  .streak-banner { background:var(--danger-bg); border:1.5px solid var(--danger); border-radius:10px; padding:9px 10px 9px 14px; font-size:13px; font-weight:700; color:var(--danger); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .streak-banner-close { background:none; border:none; color:var(--danger); font-weight:800; font-size:16px; cursor:pointer; padding:2px 8px; line-height:1; flex-shrink:0; }
+  .streak-banner-close:hover { background:rgba(0,0,0,0.06); border-radius:6px; }
   .action-row { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: var(--radius-sm); background:white; border:1.5px solid var(--gray-200); margin-bottom:8px; flex-wrap:wrap; }
   .tracker-grid { display:flex; gap:14px; align-items:flex-start; margin-bottom:10px; }
-  .tracker-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .tracker-col { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; }
   .tracker-col-title { font-size:11.5px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
-  .tracker-btn { padding:13px 10px; border-radius:10px; border:2px solid var(--gray-200); background:white; font-weight:700; font-size:13.5px; text-align:center; cursor:pointer; }
-  .tracker-btn.player { width:100%; box-sizing:border-box; min-height:52px; max-height:52px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; overflow:hidden; line-height:1.2; }
+  .tracker-btn { width:92%; padding:13px 10px; border-radius:10px; border:2px solid var(--gray-200); background:white; font-weight:700; font-size:13.5px; text-align:center; cursor:pointer; }
+  .tracker-btn.player { width:92%; box-sizing:border-box; min-height:52px; max-height:52px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; overflow:hidden; line-height:1.2; }
   .tracker-btn.player.libero { background:var(--libero-bg); border-color:var(--libero); }
   .tracker-btn.player.selected { background:var(--navy); border-color:var(--navy); color:white; }
+  .tracker-btn.player.libero.selected { background:var(--libero); border-color:var(--libero); color:white; }
   .tracker-btn.player.sub-target { border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-pale); }
   .tracker-btn.action.selected { background:var(--gold); border-color:var(--gold); color:var(--navy-dark); }
   .tracker-btn.rating { position:relative; }
-  .tracker-btn.rating.neg { background:var(--danger-bg); color:var(--danger); border-color:transparent; }
+  .tracker-btn.rating.neg { background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
   .tracker-btn.rating.neg:hover { background:#f8d3ce; }
-  .tracker-btn.rating.pos { background:var(--warning-bg); color:#8a6a08; border-color:transparent; }
+  .tracker-btn.rating.pos { background:var(--warning-bg); color:#8a6a08; border-color:#c9a227; }
   .tracker-btn.rating.pos:hover { background:#f5e3ae; }
-  .tracker-btn.rating.doble { background:var(--success-bg); color:var(--success); border-color:transparent; }
+  .tracker-btn.rating.doble { background:var(--success-bg); color:var(--success); border-color:var(--success); }
   .tracker-btn.rating.doble:hover { background:#cdead9; }
   @media (max-width: 640px) {
     .tracker-grid { flex-direction:column; }
@@ -2596,9 +2599,11 @@ let selectedPlayerId = null;
 let selectedActionId = null;
 let pendingSubPlayerId = null;
 let liveStatsScope = 'set';
+let dismissedStreakCount = 0;
+function dismissStreakAlert(count) { dismissedStreakCount = count; renderLive(document.getElementById('main-content')); }
 function setLiveStatsScope(scope) { liveStatsScope = scope; renderLive(document.getElementById('main-content')); }
 function openLive(id) {
-  liveMatchId = id; selectedPlayerId = null; selectedActionId = null; pendingSubPlayerId = null; liveStatsScope = 'set';
+  liveMatchId = id; selectedPlayerId = null; selectedActionId = null; pendingSubPlayerId = null; liveStatsScope = 'set'; dismissedStreakCount = 0;
   const m = db.matches.find(x=>x.id===id);
   lastActionId = (m && m.actions.length) ? m.actions[m.actions.length-1].id : null;
   goScreen('live');
@@ -2638,7 +2643,13 @@ function renderLive(el) {
     </div>
 
     ${pendingSubPlayerId ? `<div class="sub-banner"><span>Elige quién sale a cambio de ${playerLabel(pendingSubPlayerId)}</span><button class="btn-secondary btn-sm" onclick="cancelSub()">Cancelar</button></div>` : ''}
-    ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet)) >= NEGATIVE_STREAK_THRESHOLD ? `<div class="streak-banner">🔥 ${computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet))} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</div>` : ''}
+    ${(() => {
+      const negStreak = computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet));
+      if (negStreak >= NEGATIVE_STREAK_THRESHOLD && negStreak > dismissedStreakCount) {
+        return `<div class="streak-banner"><span>🔥 ${negStreak} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</span><button class="streak-banner-close" onclick="dismissStreakAlert(${negStreak})">✕</button></div>`;
+      }
+      return '';
+    })()}
 
     <div class="section-title">Registrar acción — barrido izquierda a derecha</div>
     <div class="tracker-grid">
@@ -2827,6 +2838,7 @@ function changeSet(delta) {
       m.activePlayerIds.forEach(id=> m.presence.push({ playerId:id, set:newSet, type:'in', ts:Date.now(), home:0, away:0 }));
     }
     m.currentSet = newSet;
+    dismissedStreakCount = 0;
   }
   saveDB(); renderLive(document.getElementById('main-content'));
 }
@@ -2858,6 +2870,7 @@ function recordAction(actionId, ratingId) {
   if (rotIdx !== -1) newAction.rotationPos = rotIdx + 1;
   m.actions.push(newAction);
   lastActionId = newAction.id;
+  if (ratingId !== 'negativa') dismissedStreakCount = 0;
   saveDB();
   showToast(`${playerLabel(selectedPlayerId)}: ${actionLabel(actionId)} · ${RATINGS.find(r=>r.id===ratingId).label}`, true);
   renderLive(document.getElementById('main-content'));
