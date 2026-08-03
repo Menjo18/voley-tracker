@@ -168,7 +168,8 @@
   .set-control .set-num { font-weight:700; min-width:44px; text-align:center; font-size:11.5px; }
   .score-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15); }
   .score-box { text-align:center; }
-  .live-top-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .live-top-row { display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  .live-header-divider { border-top:1.5px solid var(--gray-200); margin:12px 0 16px; }
   .rotation-box { background:rgba(255,255,255,0.06); border-radius:8px; padding:6px 8px; }
   .rotation-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:rgba(255,255,255,0.55); margin-bottom:3px; }
   .rotation-grid { display:grid; grid-template-columns:repeat(3,46px); gap:3px; }
@@ -227,8 +228,8 @@
   .tracker-grid { display:flex; gap:14px; align-items:flex-start; margin-bottom:10px; }
   .tracker-col { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; }
   .tracker-col-title { font-size:11.5px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
-  .tracker-btn { width:92%; padding:13px 10px; border-radius:10px; border:2px solid var(--gray-200); background:white; font-weight:700; font-size:13.5px; text-align:center; cursor:pointer; }
-  .tracker-btn.player { width:92%; box-sizing:border-box; min-height:52px; max-height:52px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; overflow:hidden; line-height:1.2; }
+  .tracker-btn { width:84%; padding:10px 10px; border-radius:10px; border:2px solid var(--gray-200); background:white; font-weight:700; font-size:13.5px; text-align:center; cursor:pointer; }
+  .tracker-btn.player { width:84%; box-sizing:border-box; min-height:46px; max-height:46px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; overflow:hidden; line-height:1.2; }
   .tracker-btn.player.libero { background:var(--libero-bg); border-color:var(--libero); }
   .tracker-btn.player.selected { background:var(--navy); border-color:var(--navy); color:white; }
   .tracker-btn.player.libero.selected { background:var(--libero); border-color:var(--libero); color:white; }
@@ -2622,6 +2623,7 @@ function renderLive(el) {
 
   el.innerHTML = `
     <button class="btn-back" onclick="goScreen('matches')">← Volver a partidos</button>
+    <div class="live-header-divider"></div>
     <div class="live-header" style="border-left:5px solid ${getTeamColor(team).bg}">
       <div class="live-top-row">
         ${rotationBoxHTML(m)}
