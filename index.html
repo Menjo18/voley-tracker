@@ -180,6 +180,34 @@
   .rotation-net-label { font-size:7.5px; color:rgba(255,255,255,0.4); text-align:center; margin-top:1px; }
   .rotation-controls { display:flex; gap:5px; margin-top:5px; }
   .rotation-controls button { font-size:10px; padding:4px 7px; }
+
+  /* ===== Planificación ===== */
+  .plan-nav { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .plan-nav-label { font-weight:700; color:var(--navy); font-size:14px; min-width:180px; }
+  .plan-week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; align-items:start; }
+  .plan-day-col { background:var(--gray-100); border-radius:10px; padding:10px; min-height:160px; display:flex; flex-direction:column; gap:8px; }
+  .plan-day-col.today { background:var(--gold-pale); border:1.5px solid var(--gold); }
+  .plan-day-header { font-size:11.5px; font-weight:700; color:var(--navy); text-align:center; line-height:1.3; }
+  .plan-day-header span { font-weight:400; color:var(--gray-600); font-size:10.5px; }
+  .plan-add-btn { background:white; border:1.5px dashed var(--gray-300); border-radius:8px; padding:6px; font-size:11px; font-weight:700; color:var(--gray-600); cursor:pointer; }
+  .plan-add-btn:hover { border-color:var(--navy); color:var(--navy); }
+  .plan-empty { font-size:10.5px; color:var(--gray-400); text-align:center; padding:8px 0; }
+  .plan-card { border-radius:8px; padding:8px 9px; cursor:pointer; font-size:11.5px; }
+  .plan-card:hover { filter:brightness(0.97); }
+  .plan-card-top { font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:4px; margin-bottom:3px; }
+  .plan-diff-badge { font-size:9.5px; font-weight:800; text-transform:uppercase; }
+  .plan-card-main { font-weight:700; color:var(--navy); line-height:1.25; margin-bottom:2px; }
+  .plan-card-sub { font-size:10px; color:var(--gray-600); }
+  .plan-converted-tag { margin-top:4px; font-size:9.5px; font-weight:700; color:var(--success); }
+  .plan-month-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .plan-month-weekday { text-align:center; font-size:10.5px; font-weight:700; color:var(--gray-600); text-transform:uppercase; padding-bottom:4px; }
+  .plan-month-cell { background:var(--gray-100); border-radius:8px; padding:6px; min-height:88px; cursor:pointer; display:flex; flex-direction:column; gap:3px; }
+  .plan-month-cell.empty { background:none; cursor:default; }
+  .plan-month-cell.today { background:var(--gold-pale); border:1.5px solid var(--gold); }
+  .plan-month-cell:hover:not(.empty) { background:var(--gray-200); }
+  .plan-month-daynum { font-size:11px; font-weight:700; color:var(--navy); }
+  .plan-mini-pill { font-size:9px; font-weight:700; border-radius:5px; padding:2px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .plan-more { font-size:9px; color:var(--gray-600); font-weight:600; }
   .score-label { font-size:10.5px; color:rgba(255,255,255,0.75); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
   .score-controls { display:flex; align-items:center; gap:6px; }
   .score-controls button { width:24px; height:24px; border-radius:6px; border:none; background:rgba(255,255,255,0.18); color:white; font-weight:800; font-size:14px; cursor:pointer; }
@@ -333,6 +361,7 @@
         <button class="sidenav-item" data-screen="teams" onclick="goScreen('teams')"><span class="nav-icon">🏆</span><span>Equipos</span></button>
         <button class="sidenav-item" data-screen="players" onclick="goScreen('players')"><span class="nav-icon">👥</span><span>Jugadoras</span></button>
         <button class="sidenav-item" data-screen="trainings" onclick="goScreen('trainings')"><span class="nav-icon">📋</span><span>Entrenos</span></button>
+        <button class="sidenav-item" data-screen="planning" onclick="goScreen('planning')"><span class="nav-icon">🗓️</span><span>Planificación</span></button>
         <button class="sidenav-item" data-screen="tests" onclick="goScreen('tests')"><span class="nav-icon">💪</span><span>Tests</span></button>
         <button class="sidenav-item" data-screen="injuries" onclick="goScreen('injuries')"><span class="nav-icon">🩹</span><span>Lesiones</span></button>
       </div>
@@ -641,6 +670,58 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-plan-event">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><div class="modal-title" id="plan-event-modal-title">Planificar</div><button class="btn-close" onclick="closeModal('modal-plan-event')">×</button></div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha</label><input type="date" id="plan-date-input"></div>
+      <div class="form-group"><label>Equipo</label><select id="plan-team-select"></select></div>
+    </div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="plan-type-select" onchange="onPlanTypeChange()">
+        <option value="fisico">💪 Físico</option>
+        <option value="tecnico">🎯 Técnico</option>
+        <option value="tactico">🧠 Táctico</option>
+        <option value="partido">🏐 Partido</option>
+        <option value="descanso">😴 Descanso</option>
+      </select>
+    </div>
+    <div id="plan-fields-training">
+      <div class="form-group"><label>Objetivo</label><input type="text" id="plan-objective-input" placeholder="Ej. Bloqueo y transición ataque-defensa"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Duración (min)</label><input type="number" id="plan-duration-input" placeholder="90"></div>
+        <div class="form-group"><label>Intensidad</label>
+          <select id="plan-intensity-select">
+            <option value="baja">🟢 Baja</option>
+            <option value="media" selected>🟡 Media</option>
+            <option value="alta">🔴 Alta</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="plan-fields-match" style="display:none">
+      <div class="form-group"><label>Rival</label><input type="text" id="plan-rival-input" placeholder="Nombre del rival"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Hora</label><input type="time" id="plan-time-input"></div>
+        <div class="form-group"><label>Lugar</label><input type="text" id="plan-location-input" placeholder="Ej. Pabellón municipal"></div>
+      </div>
+      <div class="form-group"><label>Dificultad</label>
+        <select id="plan-difficulty-select">
+          <option value="facil">🟢 Fácil</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="dificil">🔴 Difícil</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Notas</label><textarea id="plan-notes-input" style="width:100%;min-height:60px;padding:8px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit"></textarea></div>
+    <div class="btn-row" id="plan-convert-row" style="display:none"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="plan-delete-btn" onclick="deletePlanEvent()" style="display:none">Eliminar</button>
+      <button class="btn-confirm" onclick="savePlanEvent()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:420px">
     <div class="modal-header"><div class="modal-title">Confirmar</div><button class="btn-close" onclick="closeModal('modal-confirm')">×</button></div>
@@ -722,7 +803,7 @@ function loadDB() {
       return migrated;
     }
   } catch(e) { console.error('Error cargando los datos guardados:', e); }
-  return { teams: [], players: [], trainings: [], matches: [], tests: [], injuries: [], users: [] };
+  return { teams: [], players: [], trainings: [], matches: [], tests: [], injuries: [], users: [], planEvents: [] };
 }
 function normalizeDB(data) {
   data.teams = Array.isArray(data.teams) ? data.teams : [];
@@ -736,6 +817,13 @@ function normalizeDB(data) {
     if (!Array.isArray(u.teamIds)) u.teamIds = [];
   } catch(e) { console.error('Usuario dañado', e); } });
   data.injuries = Array.isArray(data.injuries) ? data.injuries : [];
+  data.planEvents = Array.isArray(data.planEvents) ? data.planEvents : [];
+  data.planEvents.forEach(e=>{ try {
+    if (e.duration===undefined) e.duration = '';
+    if (e.notes===undefined) e.notes = '';
+    if (e.convertedTrainingId===undefined) e.convertedTrainingId = null;
+    if (e.convertedMatchId===undefined) e.convertedMatchId = null;
+  } catch(err) { console.error('Evento de planificación dañado', err); } });
   data.teams.forEach((t,i)=>{ try {
     if (t.colorIdx===undefined) t.colorIdx = i;
     if (t.category===undefined) t.category = '';
@@ -1085,7 +1173,7 @@ function actionLabel(id){ return (ACTIONS.find(a=>a.id===id)||{}).label || id; }
 /* ================= NAV / TOAST / MODALS ================= */
 let currentScreen = 'home';
 const SIDENAV_GROUP_SCREENS = {
-  plantilla: ['teams','players','trainings','tests','injuries'],
+  plantilla: ['teams','players','trainings','planning','tests','injuries'],
   competicion: ['matches','live','matchstats','compare','season'],
 };
 function toggleSidenavGroup(name) {
@@ -1109,7 +1197,7 @@ function goScreen(screen) {
   currentScreen = screen;
   document.querySelectorAll('.sidenav-item').forEach(b=>b.classList.toggle('active', b.dataset.screen===screen));
   expandSidenavGroupFor(screen);
-  const titles = { home:'Inicio', teams:'Equipos', players:'Jugadoras', trainings:'Entrenos', matches:'Partidos', live:'Partido en directo', matchstats:'Estadísticas del partido', tests:'Tests', injuries:'Lesiones', compare:'Comparativa', season:'Estadísticas de temporada' };
+  const titles = { home:'Inicio', teams:'Equipos', players:'Jugadoras', trainings:'Entrenos', planning:'Planificación', matches:'Partidos', live:'Partido en directo', matchstats:'Estadísticas del partido', tests:'Tests', injuries:'Lesiones', compare:'Comparativa', season:'Estadísticas de temporada' };
   document.getElementById('topnav-title').textContent = titles[screen] || '';
   render();
 }
@@ -1145,6 +1233,7 @@ function render() {
   if (currentScreen === 'teams') return renderTeams(el);
   if (currentScreen === 'players') return renderPlayers(el);
   if (currentScreen === 'trainings') return renderTrainings(el);
+  if (currentScreen === 'planning') return renderPlanning(el);
   if (currentScreen === 'matches') return renderMatches(el);
   if (currentScreen === 'live') return renderLive(el);
   if (currentScreen === 'matchstats') return renderMatchStats(el);
@@ -1567,6 +1656,306 @@ function saveAttendance() {
 /* ================= TESTS ================= */
 let testsTeamFilter = 'all';
 function setTestsTeamFilter(id) { testsTeamFilter = id; render(); }
+/* ================= PLANIFICACIÓN (microciclos) ================= */
+const PLAN_TYPES = [
+  { id:'fisico', label:'Físico', icon:'💪' },
+  { id:'tecnico', label:'Técnico', icon:'🎯' },
+  { id:'tactico', label:'Táctico', icon:'🧠' },
+  { id:'partido', label:'Partido', icon:'🏐' },
+  { id:'descanso', label:'Descanso', icon:'😴' },
+];
+function planTypeLabel(id) { return (PLAN_TYPES.find(t=>t.id===id)||{}).label || id; }
+function planTypeIcon(id) { return (PLAN_TYPES.find(t=>t.id===id)||{}).icon || '📌'; }
+const INTENSITY_LEVELS = [
+  { id:'baja', label:'Baja', color:'var(--success)', bg:'var(--success-bg)' },
+  { id:'media', label:'Media', color:'#8a6a08', bg:'var(--warning-bg)' },
+  { id:'alta', label:'Alta', color:'var(--danger)', bg:'var(--danger-bg)' },
+];
+const DIFFICULTY_LEVELS = [
+  { id:'facil', label:'Fácil', color:'var(--success)', bg:'var(--success-bg)' },
+  { id:'media', label:'Media', color:'#8a6a08', bg:'var(--warning-bg)' },
+  { id:'dificil', label:'Difícil', color:'var(--danger)', bg:'var(--danger-bg)' },
+];
+function intensityMeta(id) { return INTENSITY_LEVELS.find(x=>x.id===id) || INTENSITY_LEVELS[1]; }
+function difficultyMeta(id) { return DIFFICULTY_LEVELS.find(x=>x.id===id) || DIFFICULTY_LEVELS[1]; }
+const WEEKDAY_NAMES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+function toISODate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseISODate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function mondayOf(dateObj) {
+  const day = dateObj.getDay();
+  const diff = (day===0?-6:1-day);
+  const monday = new Date(dateObj);
+  monday.setDate(dateObj.getDate()+diff);
+  return monday;
+}
+function addDays(dateObj, n) { const d = new Date(dateObj); d.setDate(d.getDate()+n); return d; }
+function formatDateEs(dateObj) { return dateObj.toLocaleDateString('es-ES', { day:'numeric', month:'short' }); }
+
+let planTeamFilter = 'all';
+let planViewMode = 'week';
+let planWeekStart = null;
+let planMonthCursor = null;
+function ensurePlanState() {
+  if (!planWeekStart) planWeekStart = toISODate(mondayOf(new Date()));
+  if (!planMonthCursor) { const now = new Date(); planMonthCursor = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; }
+}
+function setPlanTeamFilter(id) { planTeamFilter = id; render(); }
+function setPlanViewMode(mode) { planViewMode = mode; render(); }
+function navigatePlanWeek(delta) { planWeekStart = toISODate(addDays(parseISODate(planWeekStart), delta*7)); render(); }
+function navigatePlanMonth(delta) {
+  const [y,m] = planMonthCursor.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  planMonthCursor = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  render();
+}
+function goToPlanToday() {
+  planWeekStart = toISODate(mondayOf(new Date()));
+  const now = new Date(); planMonthCursor = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  render();
+}
+function planEventsForDate(dateStr) {
+  return db.planEvents.filter(e => (planTeamFilter==='all' || e.teamId===planTeamFilter) && e.date===dateStr)
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+}
+function planCardHTML(e) {
+  const team = db.teams.find(t=>t.id===e.teamId);
+  if (e.type === 'partido') {
+    const diff = difficultyMeta(e.difficulty);
+    return `
+    <div class="plan-card" style="border-left:4px solid ${diff.color};background:${diff.bg}" onclick="openPlanEventDetail('${e.id}')">
+      <div class="plan-card-top">🏐 Partido <span class="plan-diff-badge" style="color:${diff.color}">${diff.label}</span></div>
+      <div class="plan-card-main">${e.rival || 'Rival por definir'}</div>
+      <div class="plan-card-sub">${e.time ? e.time+' · ' : ''}${e.location || ''}</div>
+      ${e.convertedMatchId ? `<div class="plan-converted-tag">✓ Convertido</div>` : ''}
+    </div>`;
+  }
+  const intensity = intensityMeta(e.intensity);
+  return `
+  <div class="plan-card" style="border-left:4px solid ${intensity.color};background:${intensity.bg}" onclick="openPlanEventDetail('${e.id}')">
+    <div class="plan-card-top">${planTypeIcon(e.type)} ${planTypeLabel(e.type)} <span class="plan-diff-badge" style="color:${intensity.color}">${intensity.label}</span></div>
+    <div class="plan-card-main">${e.objective || 'Sin objetivo definido'}</div>
+    <div class="plan-card-sub">${e.duration ? e.duration+' min' : ''}${e.duration && team ? ' · ' : ''}${team ? team.name : ''}</div>
+    ${e.convertedTrainingId ? `<div class="plan-converted-tag">✓ Convertido</div>` : ''}
+  </div>`;
+}
+function planMiniPillHTML(e) {
+  const meta = e.type==='partido' ? difficultyMeta(e.difficulty) : intensityMeta(e.intensity);
+  const label = e.type==='partido' ? (e.rival || 'Partido') : planTypeLabel(e.type);
+  return `<div class="plan-mini-pill" style="background:${meta.bg};color:${meta.color}" onclick="event.stopPropagation();openPlanEventDetail('${e.id}')">${planTypeIcon(e.type)} ${label}</div>`;
+}
+function renderPlanWeekView() {
+  const monday = parseISODate(planWeekStart);
+  const days = Array.from({length:7}, (_,i)=>addDays(monday,i));
+  const rangeLabel = `${formatDateEs(days[0])} – ${formatDateEs(days[6])} de ${days[6].getFullYear()}`;
+  const todayStr = toISODate(new Date());
+  return `
+    <div class="plan-nav">
+      <button class="btn-secondary btn-sm" onclick="navigatePlanWeek(-1)">◀ Semana anterior</button>
+      <div class="plan-nav-label">${rangeLabel}</div>
+      <button class="btn-secondary btn-sm" onclick="navigatePlanWeek(1)">Semana siguiente ▶</button>
+      <button class="btn-secondary btn-sm" onclick="goToPlanToday()">Hoy</button>
+    </div>
+    <div class="plan-week-grid">
+      ${days.map((d,i)=>{
+        const dateStr = toISODate(d);
+        const events = planEventsForDate(dateStr);
+        return `
+        <div class="plan-day-col ${dateStr===todayStr?'today':''}">
+          <div class="plan-day-header">${WEEKDAY_NAMES[i]}<br><span>${d.getDate()}/${d.getMonth()+1}</span></div>
+          <button class="plan-add-btn" onclick="openNewPlanEventModal('${dateStr}')">+ Añadir</button>
+          ${events.map(e=>planCardHTML(e)).join('') || '<div class="plan-empty">Sin nada planificado</div>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function renderPlanMonthView() {
+  const [y,m] = planMonthCursor.split('-').map(Number);
+  const first = new Date(y, m-1, 1);
+  const monthLabel = first.toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+  const firstWeekday = (first.getDay()+6)%7;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const cells = [];
+  for (let i=0;i<firstWeekday;i++) cells.push(null);
+  for (let d=1; d<=daysInMonth; d++) cells.push(new Date(y,m-1,d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  const todayStr = toISODate(new Date());
+  return `
+    <div class="plan-nav">
+      <button class="btn-secondary btn-sm" onclick="navigatePlanMonth(-1)">◀ Mes anterior</button>
+      <div class="plan-nav-label" style="text-transform:capitalize">${monthLabel}</div>
+      <button class="btn-secondary btn-sm" onclick="navigatePlanMonth(1)">Mes siguiente ▶</button>
+      <button class="btn-secondary btn-sm" onclick="goToPlanToday()">Hoy</button>
+    </div>
+    <div class="plan-month-grid">
+      ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d=>`<div class="plan-month-weekday">${d}</div>`).join('')}
+      ${cells.map(d=>{
+        if (!d) return '<div class="plan-month-cell empty"></div>';
+        const dateStr = toISODate(d);
+        const events = planEventsForDate(dateStr);
+        return `
+        <div class="plan-month-cell ${dateStr===todayStr?'today':''}" onclick="openNewPlanEventModal('${dateStr}')">
+          <div class="plan-month-daynum">${d.getDate()}</div>
+          ${events.slice(0,3).map(e=>planMiniPillHTML(e)).join('')}
+          ${events.length>3 ? `<div class="plan-more">+${events.length-3} más</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function renderPlanning(el) {
+  ensurePlanState();
+  const teamsList = teamsForFilter();
+  el.innerHTML = `
+    <div class="page-header"><div><div class="page-title">Planificación</div><div class="page-sub">Organiza microciclos, entrenos y partidos futuros</div></div>
+      <button class="btn-add" onclick="openNewPlanEventModal()">+ Añadir</button>
+    </div>
+    <div class="gold-line"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn-sm" style="border:1.5px solid ${planTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${planTeamFilter==='all'?'var(--navy)':'white'};color:${planTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setPlanTeamFilter('all')">Todos</button>
+      ${archivedToggleButtonHTML()}
+      ${teamsList.map(t=>{
+        const c = getTeamColor(t);
+        const active = planTeamFilter===t.id;
+        const style = active ? `background:${c.bg};border-color:${c.bg};color:#fff` : `border-color:${c.bg};color:${c.bg}`;
+        return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="setPlanTeamFilter('${t.id}')">${t.name}${t.archived?' <span style="opacity:0.7">(archivado)</span>':''}</button>`;
+      }).join('')}
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn ${planViewMode==='week'?'active':''}" onclick="setPlanViewMode('week')">Semana</button>
+      <button class="tab-btn ${planViewMode==='month'?'active':''}" onclick="setPlanViewMode('month')">Mes</button>
+    </div>
+    ${planViewMode==='week' ? renderPlanWeekView() : renderPlanMonthView()}
+  `;
+}
+function onPlanTypeChange() {
+  const type = document.getElementById('plan-type-select').value;
+  document.getElementById('plan-fields-training').style.display = type==='partido' ? 'none' : 'block';
+  document.getElementById('plan-fields-match').style.display = type==='partido' ? 'block' : 'none';
+}
+let editingPlanEventId = null;
+function openNewPlanEventModal(dateStr) {
+  editingPlanEventId = null;
+  document.getElementById('plan-event-modal-title').textContent = 'Planificar';
+  document.getElementById('plan-date-input').value = dateStr || toISODate(new Date());
+  const teamsList = visibleTeams();
+  document.getElementById('plan-team-select').innerHTML = teamsList.map(t=>`<option value="${t.id}" ${planTeamFilter===t.id?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('plan-type-select').value = 'fisico';
+  document.getElementById('plan-objective-input').value = '';
+  document.getElementById('plan-duration-input').value = '';
+  document.getElementById('plan-intensity-select').value = 'media';
+  document.getElementById('plan-rival-input').value = '';
+  document.getElementById('plan-time-input').value = '';
+  document.getElementById('plan-location-input').value = '';
+  document.getElementById('plan-difficulty-select').value = 'media';
+  document.getElementById('plan-notes-input').value = '';
+  document.getElementById('plan-delete-btn').style.display = 'none';
+  document.getElementById('plan-convert-row').style.display = 'none';
+  onPlanTypeChange();
+  openModal('modal-plan-event');
+}
+function renderPlanConvertRow(e) {
+  const row = document.getElementById('plan-convert-row');
+  if (e.type === 'partido') {
+    row.style.display = 'flex';
+    row.innerHTML = e.convertedMatchId
+      ? `<button class="btn-secondary" onclick="closeModal('modal-plan-event');openLive('${e.convertedMatchId}')">▶ Ir al partido</button>`
+      : `<button class="btn-gold" onclick="convertPlanToMatch('${e.id}')">🏐 Convertir en partido</button>`;
+  } else if (e.type !== 'descanso') {
+    row.style.display = 'flex';
+    row.innerHTML = e.convertedTrainingId
+      ? `<button class="btn-secondary" onclick="closeModal('modal-plan-event');goScreen('trainings')">▶ Ver en Entrenos</button>`
+      : `<button class="btn-gold" onclick="convertPlanToTraining('${e.id}')">📋 Convertir en entreno</button>`;
+  } else {
+    row.style.display = 'none';
+  }
+}
+function openPlanEventDetail(id) {
+  const e = db.planEvents.find(x=>x.id===id);
+  if (!e) return;
+  editingPlanEventId = id;
+  document.getElementById('plan-event-modal-title').textContent = 'Editar planificación';
+  document.getElementById('plan-date-input').value = e.date;
+  const teamsList = visibleTeams();
+  document.getElementById('plan-team-select').innerHTML = teamsList.map(t=>`<option value="${t.id}" ${e.teamId===t.id?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('plan-type-select').value = e.type;
+  document.getElementById('plan-objective-input').value = e.objective || '';
+  document.getElementById('plan-duration-input').value = e.duration || '';
+  document.getElementById('plan-intensity-select').value = e.intensity || 'media';
+  document.getElementById('plan-rival-input').value = e.rival || '';
+  document.getElementById('plan-time-input').value = e.time || '';
+  document.getElementById('plan-location-input').value = e.location || '';
+  document.getElementById('plan-difficulty-select').value = e.difficulty || 'media';
+  document.getElementById('plan-notes-input').value = e.notes || '';
+  document.getElementById('plan-delete-btn').style.display = 'inline-block';
+  onPlanTypeChange();
+  renderPlanConvertRow(e);
+  openModal('modal-plan-event');
+}
+function savePlanEvent() {
+  const date = document.getElementById('plan-date-input').value;
+  const teamId = document.getElementById('plan-team-select').value;
+  const type = document.getElementById('plan-type-select').value;
+  if (!date) return showToast('Elige una fecha');
+  if (!teamId) return showToast('Selecciona un equipo');
+  const notes = document.getElementById('plan-notes-input').value.trim();
+  let data;
+  if (type === 'partido') {
+    data = { date, teamId, type, notes,
+      rival: document.getElementById('plan-rival-input').value.trim(),
+      time: document.getElementById('plan-time-input').value,
+      location: document.getElementById('plan-location-input').value.trim(),
+      difficulty: document.getElementById('plan-difficulty-select').value,
+      objective:'', duration:'', intensity:'' };
+  } else {
+    data = { date, teamId, type, notes,
+      objective: document.getElementById('plan-objective-input').value.trim(),
+      duration: document.getElementById('plan-duration-input').value,
+      intensity: document.getElementById('plan-intensity-select').value,
+      rival:'', time:'', location:'', difficulty:'' };
+  }
+  if (editingPlanEventId) {
+    const e = db.planEvents.find(x=>x.id===editingPlanEventId);
+    if (e) Object.assign(e, data);
+  } else {
+    db.planEvents.push({ id:uid(), convertedTrainingId:null, convertedMatchId:null, ...data });
+  }
+  saveDB(); closeModal('modal-plan-event'); render(); showToast('Planificación guardada');
+}
+function deletePlanEvent() {
+  if (!editingPlanEventId) return;
+  showConfirm('¿Eliminar esta planificación?', () => {
+    db.planEvents = db.planEvents.filter(x=>x.id!==editingPlanEventId);
+    saveDB(); closeModal('modal-plan-event'); render();
+  });
+}
+function convertPlanToTraining(id) {
+  const e = db.planEvents.find(x=>x.id===id);
+  if (!e) return;
+  const teamPlayers = db.players.filter(p=>p.teams.includes(e.teamId));
+  const attendance = {};
+  teamPlayers.forEach(p=>{ attendance[p.id] = { status:'asistio', notes:'' }; });
+  const training = { id:uid(), teamId:e.teamId, date:e.date, objective:e.objective, notes:e.notes||'', attendance };
+  db.trainings.push(training);
+  e.convertedTrainingId = training.id;
+  saveDB();
+  closeModal('modal-plan-event');
+  showToast('Entreno creado a partir de la planificación');
+  render();
+}
+let pendingPlanConversionId = null;
+function convertPlanToMatch(id) {
+  const e = db.planEvents.find(x=>x.id===id);
+  if (!e) return;
+  closeModal('modal-plan-event');
+  pendingPlanConversionId = id;
+  document.getElementById('match-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}" ${t.id===e.teamId?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('match-rival-input').value = e.rival || '';
+  document.getElementById('match-date-input').value = e.date;
+  document.getElementById('match-jornada-input').value = '';
+  renderMatchSquadChoices();
+  openModal('modal-match');
+}
+
 function renderTests(el) {
   if (!db.teams.length) {
     el.innerHTML = `
@@ -2587,6 +2976,12 @@ function startMatch() {
     presence: starterIds.map(id=>({ playerId:id, set:1, type:'in', ts:startTs, home:0, away:0 })),
     status:'live', actions:[] };
   db.matches.push(match); saveDB();
+  if (pendingPlanConversionId) {
+    const planEvent = db.planEvents.find(x=>x.id===pendingPlanConversionId);
+    if (planEvent) planEvent.convertedMatchId = match.id;
+    pendingPlanConversionId = null;
+    saveDB();
+  }
   closeModal('modal-match');
   openLive(match.id);
 }
