@@ -3086,6 +3086,9 @@ function renderLive(el) {
           const count = (selectedPlayerId && selectedActionId) ? m.actions.filter(x=>x.playerId===selectedPlayerId && x.set===m.currentSet && x.action===selectedActionId && x.rating===r.id).length : 0;
           return `<button class="tracker-btn rating ${r.cls}" onclick="commitRating('${r.id}')">${r.label}<span class="rating-count">${count}</span></button>`;
         }).join('')}
+      </div>
+      <div class="tracker-col">
+        <div class="tracker-col-title">4. Zona</div>
         ${zoneGridHTML(m)}
       </div>
     </div>
