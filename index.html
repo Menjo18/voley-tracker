@@ -1138,6 +1138,13 @@ function initials(name, lastname) {
 }
 function fullName(p) { return `${p.name}${p.lastname ? ' '+p.lastname : ''}`; }
 function posAbbr(pos){ const m={Colocadora:'Col',Receptora:'Rec',Opuesto:'Op',Central:'Cen',Libero:'Líb'}; return m[pos]||''; }
+function fmtDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string' || !dateStr.includes('-')) return dateStr || '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [y,m,d] = parts;
+  return `${d}/${m}/${y}`;
+}
 function jornadaLabel(m) { return m.jornada ? ` · ${m.jornada}` : ''; }
 function setsSummary(m) {
   const sets = Object.keys(m.setScores||{}).map(Number).sort((a,b)=>a-b);
@@ -1154,7 +1161,7 @@ function matchRowHTML(m) {
   <div class="match-row" style="border-left:5px solid ${c.bg}">
     <div>
       <div style="font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:50%;background:${c.bg};flex-shrink:0"></span>${(team?team.name:'—')} vs ${m.rival}</div>
-      <div style="font-size:12.5px;color:var(--gray-600);margin-top:2px">${m.date}${jornadaLabel(m)} · Set actual: ${m.currentSet} · ${m.actions.length} acciones ${statusBadge} ${homeAwayBadge} ${m.notes ? '<span class="badge badge-navy">📝 Notas</span>' : ''}</div>
+      <div style="font-size:12.5px;color:var(--gray-600);margin-top:2px">${fmtDate(m.date)}${jornadaLabel(m)} · Set actual: ${m.currentSet} · ${m.actions.length} acciones ${statusBadge} ${homeAwayBadge} ${m.notes ? '<span class="badge badge-navy">📝 Notas</span>' : ''}</div>
       ${summary ? `<div style="font-size:11.5px;color:var(--gray-600);margin-top:2px">${summary}</div>` : ''}
     </div>
     <div class="match-row-actions">
@@ -1283,7 +1290,7 @@ function renderHome(el) {
       ${liveMatches.map(m=>{
         const team = db.teams.find(t=>t.id===m.teamId);
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
-          <span style="font-size:13.5px">${team?team.name:''} vs ${m.rival} · ${m.date}</span>
+          <span style="font-size:13.5px">${team?team.name:''} vs ${m.rival} · ${fmtDate(m.date)}</span>
           <button class="btn-gold btn-sm" onclick="openLive('${m.id}')">Continuar</button>
         </div>`;
       }).join('')}
@@ -1570,7 +1577,7 @@ function trainingRowHTML(t) {
   return `
   <div class="match-row" style="border-left:5px solid ${c.bg}">
     <div>
-      <div style="font-weight:700;color:var(--navy)">${team ? team.name : '—'} · ${t.date}</div>
+      <div style="font-weight:700;color:var(--navy)">${team ? team.name : '—'} · ${fmtDate(t.date)}</div>
       <div style="font-size:12.5px;color:var(--gray-600);margin-top:2px">${t.objective || 'Sin objetivo especificado'} · ${present}/${teamPlayers.length} asistieron</div>
     </div>
     <div class="match-row-actions">
@@ -2005,7 +2012,7 @@ function testRowHTML(t) {
   <div class="match-row" style="border-left:5px solid ${c.bg}">
     <div>
       <div style="font-weight:700;color:var(--navy)">${t.name} · ${team ? team.name : '—'}</div>
-      <div style="font-size:12.5px;color:var(--gray-600);margin-top:2px">${t.date} · ${t.unit ? 'Unidad: '+t.unit+' · ' : ''}${withResult}/${teamPlayers.length} con resultado</div>
+      <div style="font-size:12.5px;color:var(--gray-600);margin-top:2px">${fmtDate(t.date)} · ${t.unit ? 'Unidad: '+t.unit+' · ' : ''}${withResult}/${teamPlayers.length} con resultado</div>
     </div>
     <div class="match-row-actions">
       <button class="btn-gold btn-sm" onclick="openTestResultsModal('${t.id}')">Resultados</button>
@@ -2079,7 +2086,7 @@ function openTestResultsModal(id) {
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
           ${r.attempts.length ? r.attempts.map((a,idx)=>`
-            <span class="badge badge-navy" style="display:inline-flex;align-items:center;gap:6px">${a.value}${t.unit?' '+t.unit:''} · ${a.date}
+            <span class="badge badge-navy" style="display:inline-flex;align-items:center;gap:6px">${a.value}${t.unit?' '+t.unit:''} · ${fmtDate(a.date)}
               <button onclick="removeTestAttempt('${t.id}','${p.id}',${idx})" style="background:none;border:none;color:var(--danger);font-weight:800;cursor:pointer;padding:0;font-size:13px">×</button>
             </span>`).join('') : '<span class="empty-text">Sin intentos todavía</span>'}
         </div>
@@ -2259,7 +2266,7 @@ function attendanceComparisonHTML() {
         <button class="btn-secondary btn-sm" onclick="selectLastNTrainings(5)">Últimos 5</button>
         <button class="btn-secondary btn-sm" onclick="selectAllTrainingsCompare()">Todos</button>
       </div></div>
-      <div class="checkbox-list" id="compare-trainings-checklist" style="max-height:160px">${teamTrainings.length ? teamTrainings.map(t=>`<label class="squad-row"><input type="checkbox" ${compareSelectedTrainings.has(t.id)?'checked':''} onchange="toggleTrainingCompare('${t.id}')"> ${t.date}${t.objective?' · '+t.objective:''}</label>`).join('') : '<div class="empty-text" style="padding:8px">Sin entrenos para este filtro.</div>'}</div>
+      <div class="checkbox-list" id="compare-trainings-checklist" style="max-height:160px">${teamTrainings.length ? teamTrainings.map(t=>`<label class="squad-row"><input type="checkbox" ${compareSelectedTrainings.has(t.id)?'checked':''} onchange="toggleTrainingCompare('${t.id}')"> ${fmtDate(t.date)}${t.objective?' · '+t.objective:''}</label>`).join('') : '<div class="empty-text" style="padding:8px">Sin entrenos para este filtro.</div>'}</div>
     </div>`;
   const selectedPlayers = teamPlayers.filter(p=>compareSelectedPlayers.has(p.id));
   const selectedTrainingsList = teamTrainings.filter(t=>compareSelectedTrainings.has(t.id)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -2293,7 +2300,7 @@ function attendanceComparisonHTML() {
   const statusAbbr = { asistio:'✓', tarde:'T', fj:'FJ', fi:'FI', lesionada:'LES', sancionada:'SAN' };
   const sessionTableHTML = `
     <div style="overflow-x:auto"><table class="stats-table">
-      <thead><tr><th>Jugadora</th>${selectedTrainingsList.map(t=>`<th>${t.date}</th>`).join('')}</tr></thead>
+      <thead><tr><th>Jugadora</th>${selectedTrainingsList.map(t=>`<th>${fmtDate(t.date)}</th>`).join('')}</tr></thead>
       <tbody>${selectedPlayers.map(p=>`<tr><td>${fullName(p)}</td>${selectedTrainingsList.map(t=>{
         const rec = t.attendance[p.id];
         const label = rec ? (statusAbbr[rec.status]||rec.status) : '—';
@@ -2321,7 +2328,7 @@ function testsComparisonHTML() {
       <div class="card-title" style="margin-bottom:8px">Tests a comparar</div>
       <div class="checkbox-list" id="compare-tests-checklist" style="max-height:160px">${teamTests.map(t=>{
         const teamName = compareTeamFilter==='all' ? (db.teams.find(x=>x.id===t.teamId)?.name || '') : '';
-        return `<label class="squad-row"><input type="checkbox" ${compareSelectedTests.has(t.id)?'checked':''} onchange="toggleTestCompare('${t.id}')"> ${t.name} · ${t.date}${teamName?` (${teamName})`:''}</label>`;
+        return `<label class="squad-row"><input type="checkbox" ${compareSelectedTests.has(t.id)?'checked':''} onchange="toggleTestCompare('${t.id}')"> ${t.name} · ${fmtDate(t.date)}${teamName?` (${teamName})`:''}</label>`;
       }).join('')}</div>
     </div>`;
   const selectedPlayers = teamPlayers.filter(p=>compareSelectedPlayers.has(p.id));
@@ -2333,7 +2340,7 @@ function testsComparisonHTML() {
   const evolutionSections = Object.keys(byName).map(name=>{
     const group = byName[name].slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     if (group.length < 2) return '';
-    const dateLabels = group.map(t=>t.date);
+    const dateLabels = group.map(t=>fmtDate(t.date));
     const seriesList = selectedPlayers.map((p,i)=>{
       const values = group.map(t=>{
         const r = t.results[p.id];
@@ -2353,11 +2360,11 @@ function testsComparisonHTML() {
       const best = Math.max(...r.attempts.map(a=>parseFloat(a.value)||0));
       return { p, best };
     }).filter(Boolean).sort((a,b)=>b.best-a.best);
-    if (!data.length) return `<div class="card"><div class="card-title">${t.name} · ${t.date}</div><div class="empty-text" style="margin-top:8px">Sin resultados para esta selección.</div></div>`;
+    if (!data.length) return `<div class="card"><div class="card-title">${t.name} · ${fmtDate(t.date)}</div><div class="empty-text" style="margin-top:8px">Sin resultados para esta selección.</div></div>`;
     const max = Math.max(...data.map(d=>d.best));
     return `
     <div class="card">
-      <div class="card-title" style="margin-bottom:12px">${t.name} · ${t.date}${t.unit?` (${t.unit})`:''}</div>
+      <div class="card-title" style="margin-bottom:12px">${t.name} · ${fmtDate(t.date)}${t.unit?` (${t.unit})`:''}</div>
       ${data.map(d=>`
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
           <div style="width:150px;font-size:12.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${fullName(d.p)}</div>
@@ -2417,7 +2424,7 @@ function injuryCardHTML(i) {
         ${!i.recovered ? `<button class="btn-secondary btn-sm" onclick="markRecovered('${i.id}')">✓ Recuperada</button>` : ''}
       </div>
     </div>
-    <div style="font-size:12.5px;color:var(--gray-600);margin-top:8px">Alta esperada: ${i.expected || '—'}${i.recoveredDate ? ' · Alta real: '+i.recoveredDate : ''}</div>
+    <div style="font-size:12.5px;color:var(--gray-600);margin-top:8px">Alta esperada: ${fmtDate(i.expected) || '—'}${i.recoveredDate ? ' · Alta real: '+fmtDate(i.recoveredDate) : ''}</div>
     ${i.notes ? `<div style="font-size:12.5px;color:var(--gray-600);margin-top:4px">${i.notes}</div>` : ''}
     <div style="margin-top:10px;display:flex;gap:8px">
       <button class="btn-secondary btn-sm" onclick="editInjury('${i.id}')">Editar</button>
@@ -2605,7 +2612,7 @@ function openPlayerProfile(playerId) {
   const injuryHTML = activeInjury ? `
     <div class="card" style="border-color:var(--danger);background:var(--danger-bg)">
       <div style="font-weight:700;color:var(--danger)">🩹 Lesionada: ${activeInjury.type} (${activeInjury.zone})</div>
-      <div style="font-size:12.5px;color:var(--gray-800);margin-top:4px">Gravedad: ${activeInjury.severity} · Alta esperada: ${activeInjury.expected || '—'}</div>
+      <div style="font-size:12.5px;color:var(--gray-800);margin-top:4px">Gravedad: ${activeInjury.severity} · Alta esperada: ${fmtDate(activeInjury.expected) || '—'}</div>
     </div>` : `
     <div class="card" style="border-color:var(--success);background:var(--success-bg)">
       <div style="font-weight:700;color:var(--success)">✓ Sin lesiones activas</div>
@@ -2673,7 +2680,7 @@ function openPlayerProfile(playerId) {
     const doble = acts.filter(a=>a.rating==='doble_positiva').length;
     const total = neg+pos+doble;
     const pct = total ? Math.round(((pos*0.5+doble*1)/total)*1000)/10 : 0;
-    return `<tr><td>${m.date}${jornadaLabel(m)} vs ${m.rival}</td><td>${total}</td><td class="${effClass(pct)}">${pct}%</td></tr>`;
+    return `<tr><td>${fmtDate(m.date)}${jornadaLabel(m)} vs ${m.rival}</td><td>${total}</td><td class="${effClass(pct)}">${pct}%</td></tr>`;
   }).filter(Boolean);
   const perMatchHTML = perMatchRows.length ? `
     <div style="overflow-x:auto"><table class="stats-table">
@@ -3045,7 +3052,7 @@ function renderLive(el) {
         </div>
       </div>
       <div class="set-control"><button onclick="changeSet(-1)">−</button><div class="set-num">Set ${m.currentSet}</div><button onclick="changeSet(1)">+</button></div>
-      <div class="live-match-info"><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones</div></div>
+      <div class="live-match-info"><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${fmtDate(m.date)}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones</div></div>
       </div>
       ${setsSummary(m) ? `<div class="sets-summary">${setsSummary(m)}</div>` : ''}
     </div>
@@ -3407,7 +3414,7 @@ function seasonTrendChartHTML(teamMatches) {
     const pos = acts.filter(a=>a.rating==='positiva').length;
     const doble = acts.filter(a=>a.rating==='doble_positiva').length;
     const pct = Math.round(((pos*0.5+doble*1)/acts.length)*1000)/10;
-    return { label: `${jornadaLabel(m) ? m.jornada : m.date}`, sub: `${m.date} vs ${m.rival}`, pct };
+    return { label: `${jornadaLabel(m) ? m.jornada : fmtDate(m.date)}`, sub: `${fmtDate(m.date)} vs ${m.rival}`, pct };
   }).filter(Boolean);
   if (points.length < 2) return '';
   return `
@@ -3442,7 +3449,7 @@ function seasonMatchComparisonHTML(teamMatches) {
       const pc = t ? Math.round(((p*0.5+d*1)/t)*1000)/10 : 0;
       return { total:t, pct:pc };
     });
-    const label = `${m.date}${jornadaLabel(m)} vs ${m.rival}`;
+    const label = `${fmtDate(m.date)}${jornadaLabel(m)} vs ${m.rival}`;
     const cells = perAction.map(r=>`<td>${r.total}</td><td class="${effClass(r.pct)}">${r.pct}%</td>`).join('');
     return `<tr><td>${label}</td><td><b>${total}</b></td><td class="${effClass(pct)}"><b>${pct}%</b></td>${cells}</tr>`;
   }).join('');
@@ -3636,7 +3643,7 @@ function renderMatchStats(el) {
   el.innerHTML = `
     <button class="btn-back" onclick="goScreen('matches')">← Volver a partidos</button>
     <div class="page-header">
-      <div><div class="page-title" style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:${getTeamColor(team).bg};flex-shrink:0"></span>${team?team.name:''} vs ${m.rival}</div><div class="page-sub">${m.date}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.status==='live'?'En directo':'Finalizado'} ${setsSummary(m)?(' · '+setsSummary(m)):''}</div></div>
+      <div><div class="page-title" style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:${getTeamColor(team).bg};flex-shrink:0"></span>${team?team.name:''} vs ${m.rival}</div><div class="page-sub">${fmtDate(m.date)}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.status==='live'?'En directo':'Finalizado'} ${setsSummary(m)?(' · '+setsSummary(m)):''}</div></div>
       <div style="display:flex;gap:8px">
         ${m.status==='live' ? `<button class="btn-gold btn-sm" onclick="openLive('${m.id}')">Continuar en directo</button>` : `<button class="btn-secondary btn-sm" onclick="reopenMatch('${m.id}')">✏️ Reabrir para editar</button>`}
         <button class="btn-secondary btn-sm" onclick="downloadMatchCSV('${m.id}')">⬇ Descargar Excel</button>
@@ -3699,7 +3706,7 @@ function renderSeason(el) {
   else if (seasonFilterMode==='custom') teamMatches = allTeamMatches.filter(m=>seasonCustomMatchIds.includes(m.id));
   const allActions = teamMatches.flatMap(m=>m.actions);
   const players = db.players.filter(p=>p.teams.includes(seasonTeamFilter));
-  const matchLabel = m => { const team = db.teams.find(t=>t.id===m.teamId); return `${m.date}${jornadaLabel(m)} vs ${m.rival}`; };
+  const matchLabel = m => { const team = db.teams.find(t=>t.id===m.teamId); return `${fmtDate(m.date)}${jornadaLabel(m)} vs ${m.rival}`; };
   const scopeLabel = seasonFilterMode==='all' ? 'Toda la temporada'
     : seasonFilterMode==='single' ? (teamMatches[0] ? matchLabel(teamMatches[0]) : 'Ningún partido seleccionado')
     : `${teamMatches.length} partido(s) seleccionado(s)`;
@@ -3880,7 +3887,7 @@ function downloadMatchExcel(matchId) {
 
   const coverRows = [
     ['PARTIDO'], [],
-    ['Equipo', teamName], ['Rival', m.rival], ['Fecha', m.date],
+    ['Equipo', teamName], ['Rival', m.rival], ['Fecha', fmtDate(m.date)],
     ['Condición', m.homeAway==='visitante' ? 'Visitante' : 'Local'],
     ['Jornada', m.jornada || '—'],
     ['Estado', m.status==='live' ? 'En directo' : 'Finalizado'], [],
@@ -4101,7 +4108,7 @@ function downloadSeasonExcel() {
     const d = acts.filter(a=>a.rating==='doble_positiva').length;
     const t = n+ps+d;
     const pct = t ? Math.round(((ps*0.5+d*1)/t)*1000)/10 : 0;
-    return [`${m.date}${jornadaLabel(m)}`, m.rival, t, pct+'%'];
+    return [`${fmtDate(m.date)}${jornadaLabel(m)}`, m.rival, t, pct+'%'];
   });
   const wsMatches = XLSX.utils.aoa_to_sheet([['Partido','Rival','Acciones','% Efectividad'], ...matchRows]);
   wsMatches['!cols'] = [{wch:22},{wch:20},{wch:10},{wch:14}];
@@ -4147,7 +4154,7 @@ function downloadSeasonExcel() {
         const r = t.results[p.id];
         if (!r || !r.attempts || !r.attempts.length) return;
         const best = Math.max(...r.attempts.map(a=>parseFloat(a.value)||0));
-        testRows.push([t.name, t.date, p.number!=null?p.number:'', fullName(p), best, t.unit||'']);
+        testRows.push([t.name, fmtDate(t.date), p.number!=null?p.number:'', fullName(p), best, t.unit||'']);
       });
     });
     const wsTests = XLSX.utils.aoa_to_sheet([['Test','Fecha','Dorsal','Jugadora','Mejor marca','Unidad'], ...testRows]);
@@ -4160,7 +4167,7 @@ function downloadSeasonExcel() {
   if (teamInjuries.length) {
     const injRows = teamInjuries.map(i=>{
       const p = db.players.find(x=>x.id===i.playerId);
-      return [p?fullName(p):'—', i.type, i.zone, i.severity, i.date, i.recovered?'Sí':'No', i.recoveredDate||'', i.expected||'', i.notes||''];
+      return [p?fullName(p):'—', i.type, i.zone, i.severity, fmtDate(i.date), i.recovered?'Sí':'No', fmtDate(i.recoveredDate)||'', fmtDate(i.expected)||'', i.notes||''];
     });
     const wsInj = XLSX.utils.aoa_to_sheet([['Jugadora','Tipo','Zona','Gravedad','Fecha','Recuperada','Alta real','Alta esperada','Notas'], ...injRows]);
     wsInj['!cols'] = [{wch:22},{wch:16},{wch:12},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:30}];
