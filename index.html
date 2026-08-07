@@ -1103,8 +1103,9 @@ function confirmNewSeason() {
   if (!name) return showToast('Ponle un nombre al equipo nuevo');
   const sourceTeam = db.teams.find(t=>t.id===newSeasonSourceTeamId);
   if (!sourceTeam) return showToast('Selecciona el equipo de origen');
-  const newTeam = { id: uid(), name, category, season, colorIdx: db.teams.length, archived: false };
+  const newTeam = { id: uid(), name, category, season, colorIdx: myTeams().length, archived: false };
   db.teams.push(newTeam);
+  if (currentUser) { if (!currentUser.teamIds) currentUser.teamIds = []; currentUser.teamIds.push(newTeam.id); }
   newSeasonSelectedPlayers.forEach(pid=>{
     const p = db.players.find(x=>x.id===pid);
     if (p && !p.teams.includes(newTeam.id)) p.teams.push(newTeam.id);
@@ -1117,12 +1118,21 @@ function confirmNewSeason() {
   showToast(`Equipo "${name}" creado con ${newSeasonSelectedPlayers.size} jugadora(s). "${sourceTeam.name}" se ha archivado.`);
 }
 
-function visibleTeams() { return db.teams.filter(t=>!t.archived); }
+function myTeamIds() { return new Set((currentUser && currentUser.teamIds) || []); }
+function myTeams() { const ids = myTeamIds(); return db.teams.filter(t=>ids.has(t.id)); }
+function myPlayers() { const ids = myTeamIds(); return db.players.filter(p=>p.teams.some(tid=>ids.has(tid))); }
+function myPlayerIds() { return new Set(myPlayers().map(p=>p.id)); }
+function myTrainings() { const ids = myTeamIds(); return db.trainings.filter(t=>ids.has(t.teamId)); }
+function myMatches() { const ids = myTeamIds(); return db.matches.filter(m=>ids.has(m.teamId)); }
+function myTests() { const ids = myTeamIds(); return db.tests.filter(t=>ids.has(t.teamId)); }
+function myInjuries() { const pids = myPlayerIds(); return db.injuries.filter(i=>pids.has(i.playerId)); }
+function myPlanEvents() { const ids = myTeamIds(); return db.planEvents.filter(e=>ids.has(e.teamId)); }
+function visibleTeams() { return myTeams().filter(t=>!t.archived); }
 let showArchivedInFilters = false;
 function toggleShowArchivedInFilters() { showArchivedInFilters = !showArchivedInFilters; render(); }
-function teamsForFilter() { return showArchivedInFilters ? db.teams.slice() : visibleTeams(); }
+function teamsForFilter() { return showArchivedInFilters ? myTeams() : visibleTeams(); }
 function archivedToggleButtonHTML() {
-  const archivedCount = db.teams.filter(t=>t.archived).length;
+  const archivedCount = myTeams().filter(t=>t.archived).length;
   if (!archivedCount) return '';
   return `<button class="btn-secondary btn-sm" onclick="toggleShowArchivedInFilters()">${showArchivedInFilters ? 'Ocultar archivados' : `Ver archivados (${archivedCount})`}</button>`;
 }
@@ -1264,11 +1274,11 @@ function renderPlaceholder(el, title, sub) {
 
 /* ================= HOME ================= */
 function computeHomeAlerts() {
-  const liveMatches = db.matches.filter(m=>m.status==='live');
-  const activeInjuries = db.injuries.filter(i=>!i.recovered);
+  const liveMatches = myMatches().filter(m=>m.status==='live');
+  const activeInjuries = myInjuries().filter(i=>!i.recovered);
   const lowAttendance = [];
-  db.players.forEach(p=>{
-    const relevant = db.trainings.filter(t=> p.teams.includes(t.teamId) && t.attendance[p.id]);
+  myPlayers().forEach(p=>{
+    const relevant = myTrainings().filter(t=> p.teams.includes(t.teamId) && t.attendance[p.id]);
     if (relevant.length < 3) return;
     const present = relevant.filter(t=> ['asistio','tarde'].includes(t.attendance[p.id].status)).length;
     const pct = Math.round((present/relevant.length)*1000)/10;
@@ -1288,7 +1298,7 @@ function renderHome(el) {
     <div class="card" style="border-color:var(--gold);background:var(--gold-pale)">
       <div class="card-title" style="margin-bottom:8px">🏐 Partidos en directo sin terminar</div>
       ${liveMatches.map(m=>{
-        const team = db.teams.find(t=>t.id===m.teamId);
+        const team = myTeams().find(t=>t.id===m.teamId);
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
           <span style="font-size:13.5px">${team?team.name:''} vs ${m.rival} · ${fmtDate(m.date)}</span>
           <button class="btn-gold btn-sm" onclick="openLive('${m.id}')">Continuar</button>
@@ -1299,7 +1309,7 @@ function renderHome(el) {
     <div class="card" style="border-color:var(--danger);background:var(--danger-bg)">
       <div class="card-title" style="margin-bottom:8px">🩹 ${activeInjuries.length} jugadora${activeInjuries.length>1?'s':''} lesionada${activeInjuries.length>1?'s':''}</div>
       ${activeInjuries.map(i=>{
-        const p = db.players.find(x=>x.id===i.playerId);
+        const p = myPlayers().find(x=>x.id===i.playerId);
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
           <span style="font-size:13.5px">${p?fullName(p):'—'} · ${i.type} (${i.zone})</span>
           <button class="btn-secondary btn-sm" onclick="openPlayerProfile('${i.playerId}')">Ver ficha</button>
@@ -1323,10 +1333,10 @@ function renderHome(el) {
     <div class="page-header"><div><div class="page-title">Panel</div><div class="page-sub">Resumen de lo que necesita tu atención hoy</div></div></div>
     <div class="gold-line"></div>
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-value">${db.teams.length}</div><div class="stat-label">Equipos</div></div>
-      <div class="stat-card"><div class="stat-value gold">${db.players.length}</div><div class="stat-label">Jugadoras</div></div>
-      <div class="stat-card"><div class="stat-value">${db.matches.length}</div><div class="stat-label">Partidos</div></div>
-      <div class="stat-card"><div class="stat-value">${db.trainings.length}</div><div class="stat-label">Entrenos</div></div>
+      <div class="stat-card"><div class="stat-value">${myTeams().length}</div><div class="stat-label">Equipos</div></div>
+      <div class="stat-card"><div class="stat-value gold">${myPlayers().length}</div><div class="stat-label">Jugadoras</div></div>
+      <div class="stat-card"><div class="stat-value">${myMatches().length}</div><div class="stat-label">Partidos</div></div>
+      <div class="stat-card"><div class="stat-value">${myTrainings().length}</div><div class="stat-label">Entrenos</div></div>
     </div>
     <div class="section-title">Avisos</div>
     ${alertsHTML}
@@ -1366,11 +1376,11 @@ function unarchiveTeam(id) {
   showToast('Equipo reactivado');
 }
 function renderTeams(el) {
-  const visible = showArchivedTeams ? db.teams.slice() : visibleTeams();
+  const visible = showArchivedTeams ? myTeams() : visibleTeams();
   if ((!selectedTeamFilter || !visible.some(t=>t.id===selectedTeamFilter)) && visible.length) selectedTeamFilter = visible[0].id;
-  const selectedTeam = db.teams.find(t=>t.id===selectedTeamFilter);
+  const selectedTeam = myTeams().find(t=>t.id===selectedTeamFilter);
   const c = getTeamColor(selectedTeam);
-  const archivedCount = db.teams.filter(t=>t.archived).length;
+  const archivedCount = myTeams().filter(t=>t.archived).length;
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Equipos</div><div class="page-sub">Crea tus equipos por categoría y temporada</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1380,7 +1390,7 @@ function renderTeams(el) {
     </div>
     <div class="gold-line"></div>
     ${archivedCount ? `<div style="margin-bottom:12px"><button class="btn-secondary btn-sm" onclick="toggleShowArchivedTeams()">${showArchivedTeams ? 'Ocultar archivados' : `Ver equipos archivados (${archivedCount})`}</button></div>` : ''}
-    ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Aún no hay equipos. Crea el primero con el botón de arriba.</div></div>' : (visible.length===0 ? '<div class="empty-state"><div class="empty-text">Todos tus equipos están archivados. Pulsa "Ver equipos archivados" para verlos.</div></div>' : `
+    ${myTeams().length===0 ? '<div class="empty-state"><div class="empty-text">Aún no hay equipos. Crea el primero con el botón de arriba.</div></div>' : (visible.length===0 ? '<div class="empty-state"><div class="empty-text">Todos tus equipos están archivados. Pulsa "Ver equipos archivados" para verlos.</div></div>' : `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       ${visible.map(t=>{
         const tc = getTeamColor(t);
@@ -1392,7 +1402,7 @@ function renderTeams(el) {
     <div class="team-banner" style="background:${c.bg}">
       <div>
         <div class="team-banner-name">${selectedTeam ? selectedTeam.name : ''}${selectedTeam && selectedTeam.archived ? ' <span style="font-size:12px;font-weight:600;opacity:0.85">(archivado)</span>' : ''}</div>
-        <div class="team-banner-sub">${[selectedTeam?.category, selectedTeam?.season].filter(Boolean).join(' · ') || 'Sin categoría/temporada'} · ${db.players.filter(p=>p.teams.includes(selectedTeamFilter)).length} jugadoras</div>
+        <div class="team-banner-sub">${[selectedTeam?.category, selectedTeam?.season].filter(Boolean).join(' · ') || 'Sin categoría/temporada'} · ${myPlayers().filter(p=>p.teams.includes(selectedTeamFilter)).length} jugadoras</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-banner" onclick="editTeam('${selectedTeamFilter}')">Editar</button>
@@ -1435,7 +1445,7 @@ function openNewTeamModal() {
   document.getElementById('team-name-input').value = '';
   document.getElementById('team-category-input').value = '';
   document.getElementById('team-season-input').value = '';
-  renderTeamColorPicker(db.teams.length);
+  renderTeamColorPicker(myTeams().length);
   openModal('modal-team');
 }
 function editTeam(id) {
@@ -1473,7 +1483,9 @@ function saveTeam() {
     return;
   }
   const t = { id:uid(), name, category, season, colorIdx };
-  db.teams.push(t); saveDB();
+  db.teams.push(t);
+  if (currentUser) { if (!currentUser.teamIds) currentUser.teamIds = []; currentUser.teamIds.push(t.id); }
+  saveDB();
   selectedTeamFilter = t.id;
   closeModal('modal-team'); render(); showToast('Equipo creado');
 }
@@ -1483,11 +1495,13 @@ function deleteTeam(id) {
   if (!team) return;
   const teamPlayerIds = db.players.filter(p=>p.teams.includes(id)).map(p=>p.id);
   const hasHistory = db.matches.some(m=>m.teamId===id) || db.trainings.some(t=>t.teamId===id) || db.tests.some(t=>t.teamId===id) || db.injuries.some(i=>teamPlayerIds.includes(i.playerId));
+  const cleanupOwnership = () => { if (currentUser && currentUser.teamIds) currentUser.teamIds = currentUser.teamIds.filter(tid=>tid!==id); };
   if (hasHistory) {
     showConfirm(`"${team.name}" tiene historial guardado (partidos, entrenos, tests o lesiones). Eliminarlo dejaría ese historial huérfano e inaccesible, sin poder consultarlo nunca más. Si lo que quieres es quitarlo de en medio sin perder nada, usa "Archivar" en su lugar, que es reversible. ¿Aun así quieres eliminarlo definitivamente?`, () => {
       db.teams = db.teams.filter(t=>t.id!==id);
       db.players.forEach(p=>{ p.teams = p.teams.filter(tid=>tid!==id); });
-      selectedTeamFilter = db.teams.length ? db.teams[0].id : null;
+      cleanupOwnership();
+      selectedTeamFilter = myTeams().length ? myTeams()[0].id : null;
       saveDB(); render();
       showToast('Equipo eliminado');
     });
@@ -1496,7 +1510,8 @@ function deleteTeam(id) {
   showConfirm('¿Eliminar este equipo? Las jugadoras que solo pertenezcan a este equipo no se borran, solo se les quita de aquí.', () => {
     db.teams = db.teams.filter(t=>t.id!==id);
     db.players.forEach(p=>{ p.teams = p.teams.filter(tid=>tid!==id); });
-    selectedTeamFilter = db.teams.length ? db.teams[0].id : null;
+    cleanupOwnership();
+    selectedTeamFilter = myTeams().length ? myTeams()[0].id : null;
     saveDB(); render();
   });
 }
@@ -1524,7 +1539,7 @@ function monthLabel(ym) {
   return `${MONTH_NAMES_ES[parseInt(m,10)-1]} ${y}`;
 }
 function renderTrainings(el) {
-  if (!db.teams.length) {
+  if (!myTeams().length) {
     el.innerHTML = `
       <div class="page-header"><div><div class="page-title">Entrenos</div><div class="page-sub">Registro de entrenamientos y asistencia por jugadora</div></div></div>
       <div class="gold-line"></div>
@@ -1532,7 +1547,7 @@ function renderTrainings(el) {
     `;
     return;
   }
-  const filtered = trainingsTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===trainingsTeamFilter);
+  const filtered = trainingsTeamFilter==='all' ? myTrainings() : db.trainings.filter(t=>t.teamId===trainingsTeamFilter);
   const availableMonths = Array.from(new Set(filtered.filter(t=>t.date).map(t=>t.date.slice(0,7)))).sort();
   const monthFiltered = trainingsMonthFilter.size ? filtered.filter(t=> t.date && trainingsMonthFilter.has(t.date.slice(0,7))) : filtered;
   const sorted = monthFiltered.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
@@ -1589,10 +1604,10 @@ function trainingRowHTML(t) {
 }
 let editingTrainingId = null;
 function openNewTrainingModal() {
-  if (!db.teams.length) { showToast('Crea antes un equipo en Equipos'); return; }
+  if (!visibleTeams().length) { showToast('Crea antes un equipo en Equipos'); return; }
   editingTrainingId = null;
   document.getElementById('training-modal-title').textContent = 'Nuevo entreno';
-  document.getElementById('training-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('training-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('training-date-input').valueAsDate = new Date();
   document.getElementById('training-objective-input').value = '';
   document.getElementById('training-notes-input').value = '';
@@ -1603,7 +1618,7 @@ function editTraining(id) {
   if (!t) return;
   editingTrainingId = id;
   document.getElementById('training-modal-title').textContent = 'Editar entreno';
-  document.getElementById('training-team-select').innerHTML = db.teams.map(x=>`<option value="${x.id}" ${x.id===t.teamId?'selected':''}>${x.name}</option>`).join('');
+  document.getElementById('training-team-select').innerHTML = visibleTeams().map(x=>`<option value="${x.id}" ${x.id===t.teamId?'selected':''}>${x.name}</option>`).join('');
   document.getElementById('training-date-input').value = t.date;
   document.getElementById('training-objective-input').value = t.objective || '';
   document.getElementById('training-notes-input').value = t.notes || '';
@@ -1727,7 +1742,7 @@ function goToPlanToday() {
   render();
 }
 function planEventsForDate(dateStr) {
-  return db.planEvents.filter(e => (planTeamFilter==='all' || e.teamId===planTeamFilter) && e.date===dateStr)
+  return myPlanEvents().filter(e => (planTeamFilter==='all' || e.teamId===planTeamFilter) && e.date===dateStr)
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
 }
 function planCardHTML(e) {
@@ -1966,7 +1981,7 @@ function convertPlanToMatch(id) {
   if (!e) return;
   closeModal('modal-plan-event');
   pendingPlanConversionId = id;
-  document.getElementById('match-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}" ${t.id===e.teamId?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('match-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}" ${t.id===e.teamId?'selected':''}>${t.name}</option>`).join('');
   document.getElementById('match-rival-input').value = e.rival || '';
   document.getElementById('match-date-input').value = e.date;
   document.getElementById('match-jornada-input').value = '';
@@ -1975,7 +1990,7 @@ function convertPlanToMatch(id) {
 }
 
 function renderTests(el) {
-  if (!db.teams.length) {
+  if (!myTeams().length) {
     el.innerHTML = `
       <div class="page-header"><div><div class="page-title">Tests</div><div class="page-sub">Tests físicos y su evolución por jugadora</div></div></div>
       <div class="gold-line"></div>
@@ -1983,7 +1998,7 @@ function renderTests(el) {
     `;
     return;
   }
-  const filtered = testsTeamFilter==='all' ? db.tests : db.tests.filter(t=>t.teamId===testsTeamFilter);
+  const filtered = testsTeamFilter==='all' ? myTests() : db.tests.filter(t=>t.teamId===testsTeamFilter);
   const sorted = filtered.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Tests</div><div class="page-sub">Tests físicos y su evolución por jugadora</div></div>
@@ -2023,11 +2038,11 @@ function testRowHTML(t) {
 }
 let editingTestId = null;
 function openNewTestModal() {
-  if (!db.teams.length) { showToast('Crea antes un equipo en Equipos'); return; }
+  if (!visibleTeams().length) { showToast('Crea antes un equipo en Equipos'); return; }
   editingTestId = null;
   document.getElementById('test-modal-title').textContent = 'Nuevo test';
   document.getElementById('test-name-input').value = '';
-  document.getElementById('test-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('test-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('test-date-input').valueAsDate = new Date();
   document.getElementById('test-unit-input').value = '';
   document.getElementById('test-notes-input').value = '';
@@ -2039,7 +2054,7 @@ function editTest(id) {
   editingTestId = id;
   document.getElementById('test-modal-title').textContent = 'Editar test';
   document.getElementById('test-name-input').value = t.name;
-  document.getElementById('test-team-select').innerHTML = db.teams.map(x=>`<option value="${x.id}" ${x.id===t.teamId?'selected':''}>${x.name}</option>`).join('');
+  document.getElementById('test-team-select').innerHTML = visibleTeams().map(x=>`<option value="${x.id}" ${x.id===t.teamId?'selected':''}>${x.name}</option>`).join('');
   document.getElementById('test-date-input').value = t.date;
   document.getElementById('test-unit-input').value = t.unit || '';
   document.getElementById('test-notes-input').value = t.notes || '';
@@ -2142,9 +2157,9 @@ let compareInitializedForTeam = null;
 function ensureCompareSelections() {
   if (compareInitializedForTeam === compareTeamFilter && compareSelectedPlayers) return;
   compareSelectedPlayers = new Set();
-  const teamTrainings = compareTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===compareTeamFilter);
+  const teamTrainings = compareTeamFilter==='all' ? myTrainings() : db.trainings.filter(t=>t.teamId===compareTeamFilter);
   compareSelectedTrainings = new Set(teamTrainings.map(t=>t.id));
-  const teamTests = compareTeamFilter==='all' ? db.tests : db.tests.filter(t=>t.teamId===compareTeamFilter);
+  const teamTests = compareTeamFilter==='all' ? myTests() : db.tests.filter(t=>t.teamId===compareTeamFilter);
   compareSelectedTests = new Set(teamTests.map(t=>t.id));
   compareInitializedForTeam = compareTeamFilter;
 }
@@ -2171,16 +2186,16 @@ function togglePlayerCompare(id) { compareSelectedPlayers.has(id) ? compareSelec
 function toggleTrainingCompare(id) { compareSelectedTrainings.has(id) ? compareSelectedTrainings.delete(id) : compareSelectedTrainings.add(id); renderKeepScroll(); }
 function toggleTestCompare(id) { compareSelectedTests.has(id) ? compareSelectedTests.delete(id) : compareSelectedTests.add(id); renderKeepScroll(); }
 function selectAllPlayersCompare() {
-  const teamPlayers = compareTeamFilter==='all' ? db.players : db.players.filter(p=>p.teams.includes(compareTeamFilter));
+  const teamPlayers = compareTeamFilter==='all' ? myPlayers() : db.players.filter(p=>p.teams.includes(compareTeamFilter));
   compareSelectedPlayers = new Set(teamPlayers.map(p=>p.id)); renderKeepScroll();
 }
 function selectNonePlayersCompare() { compareSelectedPlayers = new Set(); renderKeepScroll(); }
 function selectAllTrainingsCompare() {
-  const teamTrainings = compareTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===compareTeamFilter);
+  const teamTrainings = compareTeamFilter==='all' ? myTrainings() : db.trainings.filter(t=>t.teamId===compareTeamFilter);
   compareSelectedTrainings = new Set(teamTrainings.map(t=>t.id)); renderKeepScroll();
 }
 function selectLastNTrainings(n) {
-  const teamTrainings = (compareTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const teamTrainings = (compareTeamFilter==='all' ? myTrainings() : db.trainings.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   compareSelectedTrainings = new Set(teamTrainings.slice(0,n).map(t=>t.id)); renderKeepScroll();
 }
 function pctBarClass(pct) { return pct>=80 ? 'eff-good' : pct>=60 ? 'eff-mid' : 'eff-bad'; }
@@ -2230,7 +2245,7 @@ function renderStatsComparison(el) {
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Comparativa</div><div class="page-sub">Elige jugadoras, entrenos y tests concretos para comparar</div></div></div>
     <div class="gold-line"></div>
-    ${db.teams.length ? `
+    ${myTeams().length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn-sm" style="border:1.5px solid ${compareTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${compareTeamFilter==='all'?'var(--navy)':'white'};color:${compareTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setCompareTeamFilter('all')">Todos</button>
       ${archivedToggleButtonHTML()}
@@ -2249,8 +2264,8 @@ function renderStatsComparison(el) {
   `;
 }
 function attendanceComparisonHTML() {
-  const teamPlayers = (compareTeamFilter==='all' ? db.players.slice() : db.players.filter(p=>p.teams.includes(compareTeamFilter))).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
-  const teamTrainings = (compareTeamFilter==='all' ? db.trainings : db.trainings.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const teamPlayers = (compareTeamFilter==='all' ? myPlayers() : db.players.filter(p=>p.teams.includes(compareTeamFilter))).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
+  const teamTrainings = (compareTeamFilter==='all' ? myTrainings() : db.trainings.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const playerPicker = `
     <div class="card">
       <div class="card-header"><div class="card-title">Jugadoras</div><div style="display:flex;gap:6px">
@@ -2311,8 +2326,8 @@ function attendanceComparisonHTML() {
   return playerPicker + trainingPicker + barSection + `<div class="detail-section-title">Detalle sesión a sesión</div>${sessionTableHTML}`;
 }
 function testsComparisonHTML() {
-  const teamPlayers = (compareTeamFilter==='all' ? db.players.slice() : db.players.filter(p=>p.teams.includes(compareTeamFilter))).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
-  const teamTests = (compareTeamFilter==='all' ? db.tests : db.tests.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const teamPlayers = (compareTeamFilter==='all' ? myPlayers() : db.players.filter(p=>p.teams.includes(compareTeamFilter))).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
+  const teamTests = (compareTeamFilter==='all' ? myTests() : db.tests.filter(t=>t.teamId===compareTeamFilter)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const playerPicker = `
     <div class="card">
       <div class="card-header"><div class="card-title">Jugadoras</div><div style="display:flex;gap:6px">
@@ -2377,9 +2392,9 @@ function testsComparisonHTML() {
 }
 
 function renderInjuries(el) {
-  let items = db.injuries;
+  let items = myInjuries();
   if (injuriesTeamFilter !== 'all') {
-    const teamPlayerIds = db.players.filter(p=>p.teams.includes(injuriesTeamFilter)).map(p=>p.id);
+    const teamPlayerIds = myPlayers().filter(p=>p.teams.includes(injuriesTeamFilter)).map(p=>p.id);
     items = items.filter(i=>teamPlayerIds.includes(i.playerId));
   }
   if (injuriesStatusFilter==='active') items = items.filter(i=>!i.recovered);
@@ -2391,7 +2406,7 @@ function renderInjuries(el) {
       <button class="btn-add" onclick="openNewInjuryModal()">+ Lesión</button>
     </div>
     <div class="gold-line"></div>
-    ${db.teams.length ? `
+    ${myTeams().length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <button class="btn-sm" style="border:1.5px solid ${injuriesTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${injuriesTeamFilter==='all'?'var(--navy)':'white'};color:${injuriesTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setInjuriesTeamFilter('all')">Todos</button>
       ${archivedToggleButtonHTML()}
@@ -2442,11 +2457,11 @@ function populateInjuryPlayerSelect(preselectPlayerId) {
     : '<option value="">Sin jugadoras en este equipo</option>';
 }
 function openNewInjuryModal() {
-  if (!db.teams.length) { showToast('Crea antes un equipo en Equipos'); return; }
+  if (!visibleTeams().length) { showToast('Crea antes un equipo en Equipos'); return; }
   editingInjuryId = null;
   document.getElementById('injury-modal-title').textContent = 'Registrar lesión';
-  const defaultTeam = (injuriesTeamFilter !== 'all' && db.teams.find(t=>t.id===injuriesTeamFilter)) ? injuriesTeamFilter : db.teams[0].id;
-  document.getElementById('injury-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}" ${t.id===defaultTeam?'selected':''}>${t.name}</option>`).join('');
+  const defaultTeam = (injuriesTeamFilter !== 'all' && visibleTeams().find(t=>t.id===injuriesTeamFilter)) ? injuriesTeamFilter : visibleTeams()[0].id;
+  document.getElementById('injury-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}" ${t.id===defaultTeam?'selected':''}>${t.name}</option>`).join('');
   populateInjuryPlayerSelect();
   document.getElementById('injury-type-input').value = 'Esguince';
   document.getElementById('injury-zone-input').value = 'Tobillo';
@@ -2456,13 +2471,13 @@ function openNewInjuryModal() {
   openModal('modal-injury');
 }
 function editInjury(id) {
-  const i = db.injuries.find(x=>x.id===id);
+  const i = myInjuries().find(x=>x.id===id);
   if (!i) return;
   editingInjuryId = id;
-  const player = db.players.find(p=>p.id===i.playerId);
-  const teamId = player ? (player.teams.find(tid=>db.teams.some(t=>t.id===tid)) || (db.teams[0] && db.teams[0].id)) : (db.teams[0] && db.teams[0].id);
+  const player = myPlayers().find(p=>p.id===i.playerId);
+  const teamId = player ? (player.teams.find(tid=>myTeams().some(t=>t.id===tid)) || (myTeams()[0] && myTeams()[0].id)) : (myTeams()[0] && myTeams()[0].id);
   document.getElementById('injury-modal-title').textContent = 'Editar lesión';
-  document.getElementById('injury-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}" ${t.id===teamId?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('injury-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}" ${t.id===teamId?'selected':''}>${t.name}</option>`).join('');
   populateInjuryPlayerSelect(i.playerId);
   document.getElementById('injury-type-input').value = i.type;
   document.getElementById('injury-zone-input').value = i.zone;
@@ -2505,14 +2520,14 @@ function deleteInjury(id) {
 let playersTeamFilter = 'all';
 function setPlayersTeamFilter(id) { playersTeamFilter = id; render(); }
 function renderPlayers(el) {
-  const filtered = playersTeamFilter==='all' ? db.players : db.players.filter(p=>p.teams.includes(playersTeamFilter));
+  const filtered = playersTeamFilter==='all' ? myPlayers() : myPlayers().filter(p=>p.teams.includes(playersTeamFilter));
   const sorted = filtered.slice().sort((a,b)=> fullName(a).localeCompare(fullName(b)));
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Jugadoras</div><div class="page-sub">Todas las jugadoras del club, en todos sus equipos</div></div>
       <button class="btn-add" onclick="openNewPlayerModal()">+ Jugadora</button>
     </div>
     <div class="gold-line"></div>
-    ${db.teams.length ? `
+    ${myTeams().length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${playersTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${playersTeamFilter==='all'?'var(--navy)':'white'};color:${playersTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setPlayersTeamFilter('all')">Todas</button>
       ${archivedToggleButtonHTML()}
@@ -2523,9 +2538,9 @@ function renderPlayers(el) {
         return `<button class="btn-sm" style="border:1.5px solid;border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:white;${style}" onclick="setPlayersTeamFilter('${t.id}')">${t.name}${t.archived?' <span style="opacity:0.7">(archivado)</span>':''}</button>`;
       }).join('')}
     </div>` : ''}
-    ${sorted.length===0 ? `<div class="empty-state"><div class="empty-text">${db.players.length===0 ? 'Aún no hay jugadoras. Crea la primera con el botón de arriba.' : 'Ninguna jugadora en este equipo.'}</div></div>` : sorted.map(p=>{
+    ${sorted.length===0 ? `<div class="empty-state"><div class="empty-text">${myPlayers().length===0 ? 'Aún no hay jugadoras. Crea la primera con el botón de arriba.' : 'Ninguna jugadora en este equipo.'}</div></div>` : sorted.map(p=>{
       const teamChips = p.teams.map(tid=>{
-        const t = db.teams.find(x=>x.id===tid);
+        const t = myTeams().find(x=>x.id===tid);
         if (!t) return '';
         const c = getTeamColor(t);
         return `<span class="badge" style="background:${c.bg}22;color:${c.bg}">${t.name}</span>`;
@@ -2550,8 +2565,9 @@ function renderPlayers(el) {
 let editingPlayerId = null;
 function buildPlayerTeamChecks(selectedTeams) {
   const container = document.getElementById('player-teams-check');
-  if (!db.teams.length) { container.innerHTML = '<div class="empty-text">Crea antes un equipo en la sección Equipos.</div>'; return; }
-  container.innerHTML = db.teams.map(t=>{
+  const teams = myTeams();
+  if (!teams.length) { container.innerHTML = '<div class="empty-text">Crea antes un equipo en la sección Equipos.</div>'; return; }
+  container.innerHTML = teams.map(t=>{
     const checked = selectedTeams && selectedTeams.includes(t.id) ? 'checked' : '';
     return `<label class="team-chip"><input type="checkbox" value="${t.id}" ${checked}> ${t.name}${t.archived?' (archivado)':''}</label>`;
   }).join('');
@@ -2600,15 +2616,15 @@ function deletePlayer(id) {
   });
 }
 function openPlayerProfile(playerId) {
-  const p = db.players.find(x=>x.id===playerId);
+  const p = myPlayers().find(x=>x.id===playerId);
   if (!p) return;
-  const primaryTeam = db.teams.find(t=>p.teams.includes(t.id));
+  const primaryTeam = myTeams().find(t=>p.teams.includes(t.id));
   const c = getTeamColor(primaryTeam);
 
   document.getElementById('player-profile-title').innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px"><span class="player-avatar" style="width:30px;height:30px;font-size:12px;background:${c.bg}">${initials(p.name,p.lastname)}</span>#${p.number!=null?p.number:'-'} ${fullName(p)}</span>`;
 
   // Lesiones: estado activo
-  const activeInjury = db.injuries.find(i=>i.playerId===playerId && !i.recovered);
+  const activeInjury = myInjuries().find(i=>i.playerId===playerId && !i.recovered);
   const injuryHTML = activeInjury ? `
     <div class="card" style="border-color:var(--danger);background:var(--danger-bg)">
       <div style="font-weight:700;color:var(--danger)">🩹 Lesionada: ${activeInjury.type} (${activeInjury.zone})</div>
@@ -2619,12 +2635,12 @@ function openPlayerProfile(playerId) {
     </div>`;
 
   // Entrenos: % asistencia (Asistió + Tarde cuentan como presente)
-  const relevantTrainings = db.trainings.filter(t=> p.teams.includes(t.teamId) && t.attendance[playerId]);
+  const relevantTrainings = myTrainings().filter(t=> p.teams.includes(t.teamId) && t.attendance[playerId]);
   const presentCount = relevantTrainings.filter(t=> ['asistio','tarde'].includes(t.attendance[playerId].status)).length;
   const attendancePct = relevantTrainings.length ? Math.round((presentCount/relevantTrainings.length)*1000)/10 : null;
 
   // Tests: mejor marca de cada test en el que tenga intentos
-  const playerTests = db.tests.filter(t=> t.results[playerId] && t.results[playerId].attempts && t.results[playerId].attempts.length);
+  const playerTests = myTests().filter(t=> t.results[playerId] && t.results[playerId].attempts && t.results[playerId].attempts.length);
   const testsHTML = playerTests.length ? playerTests.map(t=>{
     const best = Math.max(...t.results[playerId].attempts.map(a=>parseFloat(a.value)||0));
     return `<div class="pc-row"><span class="pc-label" style="width:auto;flex:1">${t.name}</span><span style="font-weight:700;color:var(--navy)">${best}${t.unit?' '+t.unit:''}</span></div>`;
@@ -2633,7 +2649,7 @@ function openPlayerProfile(playerId) {
   // Partidos: usa el alcance de Temporada si ya está activo (un partido/selección/toda la temporada);
   // si no hay ninguno definido (se abre desde Equipos/Jugadoras), usa todos los partidos de sus equipos.
   const hasActiveScope = currentStatsScope.matches && currentStatsScope.matches.length && currentStatsScope.matches.some(m=>p.teams.includes(m.teamId));
-  const matchScope = hasActiveScope ? currentStatsScope.matches.filter(m=>p.teams.includes(m.teamId)) : db.matches.filter(m=>p.teams.includes(m.teamId));
+  const matchScope = hasActiveScope ? currentStatsScope.matches.filter(m=>p.teams.includes(m.teamId)) : myMatches().filter(m=>p.teams.includes(m.teamId));
   const scopeLabel = hasActiveScope ? currentStatsScope.label : 'Todos los partidos de sus equipos';
   const playerActions = matchScope.flatMap(m=> m.actions.filter(a=>a.playerId===playerId));
 
@@ -2730,6 +2746,7 @@ function createDemoTeamsAndPlayers() {
   function makeTeam(name, category, season) {
     const teamId = uid();
     db.teams.push({ id: teamId, name, category, season, colorIdx: db.teams.length });
+    if (currentUser) { if (!currentUser.teamIds) currentUser.teamIds = []; currentUser.teamIds.push(teamId); }
     const players = [];
     for (let i=1;i<=14;i++){
       const pos = i<=2 ? 'Colocadora' : i<=6 ? 'Receptora' : i<=9 ? 'Opuesto' : i<=12 ? 'Central' : 'Libero';
@@ -2926,13 +2943,13 @@ function importJSONFile(evt) {
 let matchesTeamFilter = 'all';
 function setMatchesTeamFilter(teamId) { matchesTeamFilter = teamId; render(); }
 function renderMatches(el) {
-  const filtered = matchesTeamFilter==='all' ? db.matches : db.matches.filter(m=>m.teamId===matchesTeamFilter);
+  const filtered = matchesTeamFilter==='all' ? myMatches() : db.matches.filter(m=>m.teamId===matchesTeamFilter);
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Partidos</div><div class="page-sub">Historial de partidos registrados</div></div>
       <button class="btn-add" onclick="openNewMatchFlow()">+ Nuevo partido</button>
     </div>
     <div class="gold-line"></div>
-    ${db.teams.length ? `
+    ${myTeams().length ? `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn-sm" style="border:1.5px solid ${matchesTeamFilter==='all'?'var(--navy)':'var(--gray-200)'};border-radius:10px;font-weight:700;padding:10px 18px;cursor:pointer;background:${matchesTeamFilter==='all'?'var(--navy)':'white'};color:${matchesTeamFilter==='all'?'#fff':'var(--navy)'}" onclick="setMatchesTeamFilter('all')">Todos</button>
       ${archivedToggleButtonHTML()}
@@ -2947,8 +2964,8 @@ function renderMatches(el) {
   `;
 }
 function openNewMatchFlow() {
-  if (!db.teams.length) { showToast('Crea antes un equipo en Plantillas'); goScreen('teams'); return; }
-  document.getElementById('match-team-select').innerHTML = db.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  if (!visibleTeams().length) { showToast('Crea antes un equipo en Plantillas'); goScreen('teams'); return; }
+  document.getElementById('match-team-select').innerHTML = visibleTeams().map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   document.getElementById('match-rival-input').value = '';
   document.getElementById('match-date-input').valueAsDate = new Date();
   document.getElementById('match-jornada-input').value = '';
@@ -2957,7 +2974,7 @@ function openNewMatchFlow() {
 }
 function renderMatchSquadChoices() {
   const teamId = document.getElementById('match-team-select').value;
-  const players = db.players.filter(p=>p.teams.includes(teamId)).sort((a,b)=>(a.number||0)-(b.number||0));
+  const players = myPlayers().filter(p=>p.teams.includes(teamId)).sort((a,b)=>(a.number||0)-(b.number||0));
   const list = document.getElementById('match-squad-list');
   list.innerHTML = players.length ? players.map((p,idx)=>`
     <div class="squad-row">
@@ -3719,7 +3736,7 @@ function renderSeason(el) {
       </div>
     </div>
     <div class="gold-line"></div>
-    ${db.teams.length===0 ? '<div class="empty-state"><div class="empty-text">Crea un equipo primero.</div></div>' : `
+    ${myTeams().length===0 ? '<div class="empty-state"><div class="empty-text">Crea un equipo primero.</div></div>' : `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       ${archivedToggleButtonHTML()}
       ${teamsForFilter().map(t=>{
@@ -4179,6 +4196,19 @@ function downloadSeasonExcel() {
 }
 
 seedDefaultUsers();
+const OWNERSHIP_MIGRATED_KEY = DB_KEY + '_ownershipMigrated';
+if (!localStorage.getItem(OWNERSHIP_MIGRATED_KEY)) {
+  const entrenador1 = db.users.find(u=>u.username==='entrenador1') || db.users[0];
+  if (entrenador1) {
+    if (!entrenador1.teamIds) entrenador1.teamIds = [];
+    db.teams.forEach(t=>{
+      const alreadyOwned = db.users.some(u=>(u.teamIds||[]).includes(t.id));
+      if (!alreadyOwned) entrenador1.teamIds.push(t.id);
+    });
+    saveDB();
+  }
+  localStorage.setItem(OWNERSHIP_MIGRATED_KEY, '1');
+}
 const savedUserId = localStorage.getItem(SESSION_KEY);
 const savedUser = savedUserId ? db.users.find(u=>u.id===savedUserId) : null;
 if (savedUser) {
