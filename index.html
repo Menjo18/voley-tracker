@@ -335,11 +335,98 @@
     .action-label { min-width:100%; }
     .score-row { gap:8px; }
   }
+
+  /* ===== v2: rejilla acción/nivel, puntos y modo vídeo ===== */
+  button { touch-action: manipulation; }
+  .zone-grid { grid-template-columns:repeat(3,48px); grid-template-rows:repeat(3,48px); }
+  .zone-btn { width:48px; height:48px; font-size:15px; }
+  .zone-out-btn { min-height:44px; }
+  .tracker-grid.v2 { align-items:stretch; }
+  .tracker-grid.v2 .tracker-col.players { flex:0 0 26%; align-items:stretch; }
+  .tracker-grid.v2 .tracker-col.players .tracker-col-title, .tracker-grid.v2 .tracker-col.gridcol .tracker-col-title { text-align:center; }
+  .tracker-grid.v2 .tracker-btn.player { width:100%; flex:1 1 0; min-height:48px; max-height:none; }
+  .tracker-grid.v2 .tracker-col.gridcol { flex:1 1 0; align-items:stretch; gap:6px; }
+  .tracker-grid.v2 .tracker-col.zonecol { flex:0 0 auto; }
+  .tracker-grid.v2 .tracker-col.zonecol .zone-panel { margin-top:0; }
+  .ag-head, .ag-row { display:grid; grid-template-columns:122px repeat(3,minmax(0,1fr)); gap:6px; align-items:center; }
+  .ag-head { font-size:11.5px; font-weight:700; color:var(--gray-600); text-align:center; }
+  .ag-row { flex:1 1 0; }
+  .ag-label { font-weight:700; font-size:13.5px; white-space:nowrap; color:var(--gray-800); display:flex; align-items:center; gap:6px; padding:6px; border-radius:8px; min-width:0; }
+  .ag-row.sel .ag-label { background:var(--gold); color:var(--navy-dark); }
+  .ag-cell { position:relative; height:100%; min-height:48px; border-radius:10px; border:2px solid; font-size:18px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .ag-cell.doble { background:var(--success-bg); color:#1c5e34; border-color:var(--success); }
+  .ag-cell.pos { background:var(--warning-bg); color:#6e5206; border-color:#c9a227; }
+  .ag-cell.neg { background:var(--danger-bg); color:#96281c; border-color:var(--danger); }
+  .ag-cell:active { filter:brightness(0.9); transform:scale(0.97); }
+  .ag-count { position:absolute; top:3px; right:7px; font-size:12px; font-weight:700; }
+  .kbd { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 4px; margin-right:5px; border-radius:4px; border:1px solid currentColor; font-size:10.5px; font-weight:700; opacity:0.75; flex-shrink:0; }
+  .kbd-help { font-size:12px; color:var(--gray-600); margin:-4px 0 8px; }
+  .point-row { display:flex; gap:12px; margin:10px 0 4px; }
+  .point-btn { flex:1; min-height:60px; border:none; border-radius:12px; color:white; font-weight:800; font-size:16px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-family:inherit; }
+  .point-btn span { display:flex; align-items:center; }
+  .point-btn small { font-size:11.5px; font-weight:600; }
+  .point-btn.home { background:#1f6b3a; }
+  .point-btn.away { background:#a12d21; }
+  .point-btn:active { filter:brightness(0.9); }
+  .score-label { cursor:pointer; }
+  .serve-chip { background:var(--gold-light); color:var(--navy-dark); font-size:9.5px; font-weight:800; padding:1px 7px; border-radius:999px; margin-left:4px; text-transform:none; letter-spacing:0; }
+  body.video-mode .sidenav, body.video-mode .topnav { display:none; }
+  body.video-mode .main-content { max-width:none; padding:10px 12px 60px; }
+  body.video-mode .live-header { padding:10px 12px; margin-bottom:10px; }
+  body.video-mode .live-match-info, body.video-mode .sets-summary { display:none; }
+  body.video-mode .live-top-row { display:grid; grid-template-columns:auto 1fr auto; grid-template-areas:"rot score score" "rot back set"; gap:8px 12px; align-items:center; justify-content:stretch; }
+  body.video-mode .live-top-row .rotation-box { grid-area:rot; }
+  body.video-mode .live-top-row .score-row { grid-area:score; }
+  body.video-mode .live-top-row .btn-back-ondark { grid-area:back; justify-self:start; }
+  body.video-mode .live-top-row .set-control { grid-area:set; justify-self:end; }
+  body.video-mode .score-row { margin-top:0; padding-top:0; border-top:none; }
+  body.video-mode .tracker-grid.v2 .tracker-col.players { flex:0 0 150px; }
+  #live-wrap { display:grid; grid-template-columns:minmax(430px,560px) minmax(0,1fr); gap:14px; align-items:start; }
+  #video-side { position:sticky; top:8px; min-width:0; }
+  #video-side video { width:100%; max-height:60vh; background:#0b1220; border-radius:12px; display:block; }
+  .video-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:white; border:1.5px solid var(--gray-200); border-radius:10px; padding:8px 10px; margin-top:8px; }
+  .video-bar2 { font-size:12.5px; color:var(--gray-600); padding:4px 10px; margin-top:6px; }
+  .vbtn { min-height:44px; padding:0 14px; border-radius:10px; border:2px solid var(--gray-200); background:white; color:var(--navy); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .vbtn.vplay { background:var(--navy); border-color:var(--navy); color:white; min-width:128px; }
+  .vtime { font-size:13.5px; font-weight:700; color:var(--navy); white-space:nowrap; margin:0 4px; }
+  .vspeed { display:inline-flex; border:2px solid var(--gray-200); border-radius:10px; overflow:hidden; margin-left:auto; }
+  .vspeed button { min-height:40px; padding:0 10px; border:none; background:white; color:var(--gray-800); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .vspeed button.on { background:var(--navy); color:white; }
+  .vauto { display:flex; align-items:center; gap:6px; font-weight:600; color:var(--gray-800); cursor:pointer; }
+  .vauto input { width:18px; height:18px; }
+  .vname { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
+  .vbtn-sm { min-height:36px; padding:0 10px; border-radius:8px; border:1.5px solid var(--gray-200); background:white; color:var(--navy); font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+  #video-extra { display:flex; gap:12px; margin-top:10px; align-items:flex-start; flex-wrap:wrap; }
+  #video-extra .zone-panel { margin-top:4px; }
+  .log-card { flex:1; min-width:250px; background:white; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); padding:10px 12px; display:flex; flex-direction:column; gap:5px; }
+  .log-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:12px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.3px; }
+  .log-title small { font-size:11.5px; font-weight:500; color:var(--gray-600); text-transform:none; letter-spacing:0; }
+  .log-row { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 10px; border:1px solid var(--gray-200); border-radius:8px; background:var(--gray-50); font-size:13px; color:var(--gray-800); cursor:pointer; text-align:left; font-family:inherit; }
+  .log-row .lt { width:48px; font-weight:700; color:var(--navy); flex-shrink:0; }
+  .log-row .lw { width:92px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; }
+  .log-row .la { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .log-row .ll { width:32px; height:22px; border-radius:6px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .log-row .ll.doble { background:var(--success-bg); color:#1c5e34; }
+  .log-row .ll.pos { background:var(--warning-bg); color:#6e5206; }
+  .log-row .ll.neg { background:var(--danger-bg); color:#96281c; }
+  .log-row .lz { width:42px; color:var(--gray-600); flex-shrink:0; }
+  @media (max-width: 900px) {
+    #live-wrap { grid-template-columns:1fr; }
+    #video-side { position:static; order:-1; }
+    #video-side video { max-height:36vh; }
+  }
+  @media (max-width: 640px) {
+    .tracker-grid.v2 .tracker-col.players { flex:1 1 auto; }
+    .tracker-grid.v2 .tracker-btn.player { flex:1 1 30%; }
+  }
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
+<input type="file" id="video-file-input" accept="video/*" style="display:none" onchange="onVideoFileChosen(event)">
+<input type="file" id="import-match-file" accept=".json,application/json" style="display:none" onchange="importMatchFile(event)">
+
 
 <div class="login-screen" id="login-screen">
   <div class="login-card">
@@ -727,6 +814,21 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-edit-action">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><div class="modal-title">Corregir acción</div><button class="btn-close" onclick="closeModal('modal-edit-action')">×</button></div>
+    <div id="edit-action-info" style="font-size:12.5px;color:var(--gray-600);margin-bottom:12px"></div>
+    <div class="form-group"><label for="edit-action-player">Jugadora</label><select id="edit-action-player"></select></div>
+    <div class="form-group"><label for="edit-action-action">Acción</label><select id="edit-action-action"></select></div>
+    <div class="form-group"><label for="edit-action-rating">Nivel</label><select id="edit-action-rating"></select></div>
+    <div class="form-group"><label for="edit-action-zone">Zona</label><select id="edit-action-zone"></select></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="edit-action-seek" onclick="seekToEditAction()">▶ Ver en el vídeo</button>
+      <button class="btn-secondary" style="color:var(--danger)" onclick="deleteEditAction()">Eliminar</button>
+      <button class="btn-gold" style="border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer" onclick="saveEditAction()">Guardar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:420px">
     <div class="modal-header"><div class="modal-title">Confirmar</div><button class="btn-close" onclick="closeModal('modal-confirm')">×</button></div>
@@ -875,6 +977,8 @@ function normalizeDB(data) {
       if (!m.timeouts) m.timeouts = [];
       if (m.notes===undefined) m.notes = '';
       if (!m.rotationBySet) m.rotationBySet = {};
+      if (!m.serveBySet || typeof m.serveBySet!=='object') m.serveBySet = {};
+      if (!Array.isArray(m.points)) m.points = [];
       m.actions.forEach(a=>{ if (a.zone===undefined) a.zone = null; if (a.rotationPos===undefined) a.rotationPos = null; });
       if (!m.presence) {
         // Compatibilidad con partidos creados antes de esta función: arrancamos el registro desde ahora.
@@ -1216,6 +1320,7 @@ function expandSidenavGroupFor(screen) {
   });
 }
 function goScreen(screen) {
+  if (screen !== 'live') leaveVideoUI();
   currentScreen = screen;
   document.querySelectorAll('.sidenav-item').forEach(b=>b.classList.toggle('active', b.dataset.screen===screen));
   expandSidenavGroupFor(screen);
@@ -2924,6 +3029,40 @@ function exportJSON() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast('Copia de seguridad descargada');
 }
+function exportMatchJSON(id) {
+  const m = db.matches.find(x=>x.id===id); if (!m) return;
+  const team = db.teams.find(t=>t.id===m.teamId);
+  const players = db.players.filter(p=>(m.squadIds||[]).includes(p.id)).map(p=>({ id:p.id, name:p.name, lastname:p.lastname, number:p.number }));
+  const payload = { type:'volley-tracker-match', version:1, team: team ? { id:team.id, name:team.name } : null, players, match:m };
+  const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `partido_${m.rival}_${m.date}.json`.replace(/\s+/g,'_');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('Partido exportado');
+}
+function importMatchFile(evt) {
+  const file = evt.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let data;
+    try { data = JSON.parse(e.target.result); } catch(err) { return showToast('Archivo no válido'); }
+    if (!data || data.type !== 'volley-tracker-match' || !data.match || !data.match.id) return showToast('Este archivo no es un partido exportado');
+    const m = data.match;
+    if (!db.teams.some(t=>t.id===m.teamId)) return showToast('El equipo de este partido no existe en este dispositivo. Importa antes una copia completa.');
+    const missing = (m.squadIds||[]).filter(pid=>!db.players.some(p=>p.id===pid)).length;
+    if (missing) return showToast(`Faltan ${missing} jugadoras de este partido en este dispositivo. Importa antes una copia completa.`);
+    const apply = () => {
+      db.matches = db.matches.filter(x=>x.id!==m.id);
+      db.matches.push(m);
+      normalizeDB(db); saveDB(); render();
+      showToast('Partido importado');
+    };
+    if (db.matches.some(x=>x.id===m.id)) showConfirm(`Este partido (vs ${m.rival}) ya existe en este dispositivo. ¿Sustituirlo por el del archivo? El resto de datos no se toca.`, apply);
+    else apply();
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
 function importJSONFile(evt) {
   const file = evt.target.files[0]; if (!file) return;
   const reader = new FileReader();
@@ -2946,7 +3085,10 @@ function renderMatches(el) {
   const filtered = matchesTeamFilter==='all' ? myMatches() : db.matches.filter(m=>m.teamId===matchesTeamFilter);
   el.innerHTML = `
     <div class="page-header"><div><div class="page-title">Partidos</div><div class="page-sub">Historial de partidos registrados</div></div>
-      <button class="btn-add" onclick="openNewMatchFlow()">+ Nuevo partido</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="document.getElementById('import-match-file').click()">⬆ Importar partido</button>
+        <button class="btn-add" onclick="openNewMatchFlow()">+ Nuevo partido</button>
+      </div>
     </div>
     <div class="gold-line"></div>
     ${myTeams().length ? `
@@ -3035,35 +3177,200 @@ let dismissedStreakCount = 0;
 function dismissStreakAlert(count) { dismissedStreakCount = count; renderLive(document.getElementById('main-content')); }
 function setLiveStatsScope(scope) { liveStatsScope = scope; renderLive(document.getElementById('main-content')); }
 function openLive(id) {
+  if (id !== liveMatchId && videoMode) exitVideoMode(true);
   liveMatchId = id; selectedPlayerId = null; selectedActionId = null; pendingSubPlayerId = null; liveStatsScope = 'set'; dismissedStreakCount = 0;
   const m = db.matches.find(x=>x.id===id);
   lastActionId = (m && m.actions.length) ? m.actions[m.actions.length-1].id : null;
   goScreen('live');
 }
 
-function renderLive(el) {
-  const m = db.matches.find(x=>x.id===liveMatchId);
-  if (!m) { goScreen('matches'); return; }
-  const team = db.teams.find(t=>t.id===m.teamId);
-  const active = db.players.filter(p=>m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0));
-  const bench = db.players.filter(p=>m.squadIds.includes(p.id) && !m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0));
-  if ((!selectedPlayerId || !active.find(p=>p.id===selectedPlayerId)) && active.length) selectedPlayerId = active[0].id;
-  const score = m.setScores[m.currentSet] || { home:0, away:0 };
+/* ================= v2: SAQUE, PUNTOS, REJILLA Y MODO VÍDEO ================= */
+const HAS_KBD = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+const ACTION_KEYS = { saque:'S', recepcion:'R', defensa:'D', colocacion:'C', ataque:'A', bloqueo:'B', freeball:'F' };
+const RATING_SYMBOL = { doble_positiva:'++', positiva:'+', negativa:'−' };
+const RATING_ARROW = { doble_positiva:'↑', positiva:'→', negativa:'↓' };
+let _lastTs = 0;
+function nowTs() { const t = Math.max(Date.now(), _lastTs + 1); _lastTs = t; return t; }
+function escHTML(s) { return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function kbdHTML(k) { return HAS_KBD ? `<span class="kbd">${k}</span>` : ''; }
+function liveMatch() { return db.matches.find(x=>x.id===liveMatchId); }
+function liveActivePlayers(m) { return db.players.filter(p=>m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0)); }
+
+function getServe(m) { return (m.serveBySet || {})[m.currentSet] || null; }
+function setServe(side) {
+  const m = liveMatch(); if (!m) return;
+  if (!m.serveBySet) m.serveBySet = {};
+  m.serveBySet[m.currentSet] = side;
+  saveDB();
+  renderLive(document.getElementById('main-content'));
+}
+function scorePoint(side) {
+  const m = liveMatch(); if (!m) return;
+  const serveBefore = getServe(m);
+  if (!serveBefore) return showToast('Indica primero quién saca en este set');
+  if (!m.setScores[m.currentSet]) m.setScores[m.currentSet] = { home:0, away:0 };
+  const sc = m.setScores[m.currentSet];
+  sc[side] += 1;
+  let rotated = false;
+  if (side === 'home' && serveBefore === 'away') {
+    const rot = getRotationArray(m);
+    if (rot.some(x=>x)) { rot.push(rot.shift()); rotated = true; }
+  }
+  m.serveBySet[m.currentSet] = side;
+  if (!Array.isArray(m.points)) m.points = [];
+  m.points.push({ id:uid(), set:m.currentSet, side, serveBefore, rotated, home:sc.home, away:sc.away, ts:nowTs(), videoT:currentVideoT() });
+  saveDB();
+  showToast(`${side==='home'?'Punto nuestro':'Punto rival'} · ${sc.home}-${sc.away}${rotated?' · rotamos':''}`, true);
+  renderLive(document.getElementById('main-content'));
+}
+
+/* ---------- Modo vídeo ---------- */
+let videoMode = false;
+let videoPaneEl = null;
+let videoEl = null;
+let videoUrl = null;
+let videoName = '';
+let videoAutoPause = true;
+let videoResumeAfterEntry = false;
+function fmtVideoT(s) {
+  if (s==null || isNaN(s)) return '—';
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s/3600), mi = Math.floor((s%3600)/60), se = s%60;
+  return (h ? h + ':' + String(mi).padStart(2,'0') : String(mi)) + ':' + String(se).padStart(2,'0');
+}
+function currentVideoT() {
+  if (!videoMode || !videoEl || isNaN(videoEl.currentTime)) return null;
+  return Math.round(videoEl.currentTime*10)/10;
+}
+function ensureVideoPane() {
+  if (videoPaneEl) return videoPaneEl;
+  const pane = document.createElement('div');
+  pane.className = 'video-pane-inner';
+  pane.innerHTML = `
+    <video id="vt-video" playsinline controls preload="metadata"></video>
+    <div class="video-bar">
+      <button type="button" class="vbtn" data-act="back">−3 s</button>
+      <button type="button" class="vbtn vplay" data-act="toggle" id="vt-play">▶ Reproducir</button>
+      <button type="button" class="vbtn" data-act="fwd">+3 s</button>
+      <span class="vtime" id="vt-time">0:00</span>
+      <span class="vspeed">
+        <button type="button" data-rate="0.5">0,5x</button><button type="button" data-rate="0.75">0,75x</button><button type="button" data-rate="1" class="on">1x</button>
+      </span>
+    </div>
+    <div class="video-bar video-bar2">
+      <label class="vauto"><input type="checkbox" id="vt-auto" checked> Pausar al elegir jugadora</label>
+      <span class="vname" id="vt-name"></span>
+      <button type="button" class="vbtn-sm" data-act="change">Cambiar vídeo</button>
+      <button type="button" class="vbtn-sm" data-act="exit">Salir del modo vídeo</button>
+    </div>`;
+  videoEl = pane.querySelector('video');
+  pane.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if (!b) return;
+    b.blur();
+    if (b.dataset.rate) { videoEl.playbackRate = parseFloat(b.dataset.rate); return; }
+    const act = b.dataset.act;
+    if (act === 'back') videoSeekBy(-3);
+    else if (act === 'fwd') videoSeekBy(3);
+    else if (act === 'toggle') videoToggle();
+    else if (act === 'change') document.getElementById('video-file-input').click();
+    else if (act === 'exit') exitVideoMode();
+  });
+  pane.querySelector('#vt-auto').addEventListener('change', e=>{ videoAutoPause = e.target.checked; });
+  ['play','pause','ratechange','timeupdate','loadedmetadata'].forEach(ev=>videoEl.addEventListener(ev, updateVideoUI));
+  videoEl.addEventListener('pause', ()=>{
+    const m = liveMatch();
+    if (m && videoMode && !isNaN(videoEl.currentTime)) { m.videoLastT = Math.round(videoEl.currentTime); saveDB(); }
+  });
+  videoEl.addEventListener('error', ()=>{
+    if (videoEl.getAttribute('src')) showToast('Este navegador no puede reproducir este vídeo. Prueba con otro navegador o conviértelo a MP4 (H.264).');
+  });
+  videoPaneEl = pane;
+  return pane;
+}
+function updateVideoUI() {
+  if (!videoPaneEl || !videoEl) return;
+  const playBtn = videoPaneEl.querySelector('#vt-play');
+  if (playBtn) playBtn.textContent = videoEl.paused ? '▶ Reproducir' : '⏸ Pausa';
+  const t = videoPaneEl.querySelector('#vt-time');
+  if (t) t.textContent = fmtVideoT(videoEl.currentTime) + (isNaN(videoEl.duration) ? '' : ' / ' + fmtVideoT(videoEl.duration));
+  videoPaneEl.querySelectorAll('.vspeed button').forEach(b=>b.classList.toggle('on', parseFloat(b.dataset.rate) === videoEl.playbackRate));
+  const n = videoPaneEl.querySelector('#vt-name');
+  if (n) n.textContent = videoName;
+}
+function videoSeekBy(delta) {
+  if (!videoEl || isNaN(videoEl.currentTime)) return;
+  videoEl.currentTime = Math.max(0, videoEl.currentTime + delta);
+}
+function videoToggle() {
+  if (!videoEl) return;
+  if (videoEl.paused) { const p = videoEl.play(); if (p && p.catch) p.catch(()=>{}); }
+  else videoEl.pause();
+}
+function videoPauseForEntry() {
+  if (!videoMode || !videoEl || !videoAutoPause) return;
+  if (!videoEl.paused) { videoEl.pause(); videoResumeAfterEntry = true; }
+}
+function videoResumeIfNeeded() {
+  if (!videoMode || !videoEl || !videoResumeAfterEntry) return;
+  videoResumeAfterEntry = false;
+  const p = videoEl.play(); if (p && p.catch) p.catch(()=>{});
+}
+function onVideoFileChosen(evt) {
+  const file = evt.target.files && evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  const m = liveMatch();
+  if (!m || currentScreen !== 'live') return;
+  ensureVideoPane();
+  if (videoUrl) { try { URL.revokeObjectURL(videoUrl); } catch(e) {} }
+  videoUrl = URL.createObjectURL(file);
+  videoName = file.name;
+  const resumeAt = (m.videoName === file.name && m.videoLastT) ? m.videoLastT : 0;
+  m.videoName = file.name;
+  saveDB();
+  videoEl.src = videoUrl;
+  if (resumeAt) {
+    const onMeta = ()=>{ videoEl.removeEventListener('loadedmetadata', onMeta); try { videoEl.currentTime = resumeAt; } catch(e) {} };
+    videoEl.addEventListener('loadedmetadata', onMeta);
+  }
+  videoMode = true;
+  videoResumeAfterEntry = false;
+  updateVideoUI();
+  renderLive(document.getElementById('main-content'));
+  showToast(resumeAt ? `Vídeo cargado. Continúas en ${fmtVideoT(resumeAt)}` : 'Vídeo cargado');
+}
+function leaveVideoUI() {
+  if (videoEl && !videoEl.paused) videoEl.pause();
+  document.body.classList.remove('video-mode');
+}
+function exitVideoMode(silent) {
+  leaveVideoUI();
+  videoMode = false;
+  videoResumeAfterEntry = false;
+  if (videoEl) { videoEl.removeAttribute('src'); try { videoEl.load(); } catch(e) {} }
+  if (videoUrl) { try { URL.revokeObjectURL(videoUrl); } catch(e) {} videoUrl = null; }
+  videoName = '';
+  if (!silent && currentScreen === 'live') renderLive(document.getElementById('main-content'));
+}
+
+/* ---------- Piezas de la pantalla de registro ---------- */
+function liveHeaderHTML(m, team, score) {
   const homeTOs = (m.timeouts||[]).filter(t=>t.set===m.currentSet && t.side==='home').length;
   const awayTOs = (m.timeouts||[]).filter(t=>t.set===m.currentSet && t.side==='away').length;
-
-  el.innerHTML = `
+  const serve = getServe(m);
+  const chip = side => serve===side ? ' <span class="serve-chip">Saca</span>' : '';
+  return `
     <div class="live-header" style="border-left:5px solid ${getTeamColor(team).bg}">
       <div class="live-top-row">
         <button class="btn-back-ondark" onclick="goScreen('matches')">← Volver</button>
         ${rotationBoxHTML(m)}
         <div class="score-row">
-        <div class="score-box"><div class="score-label">${team?team.name:'Nuestro equipo'}</div>
+        <div class="score-box"><div class="score-label" onclick="setServe('home')" title="Toca para marcar que saca este equipo">${team?team.name:'Nuestro equipo'}${chip('home')}</div>
           <div class="score-controls"><button onclick="scoreChange('home',-1)">−</button><div class="score-val">${score.home}</div><button onclick="scoreChange('home',1)">+</button></div>
           <button class="btn-timeout" ${homeTOs>=2?'disabled':''} onclick="requestTimeout('home')">⏱ Tiempo muerto (${homeTOs}/2)</button>
         </div>
         <div class="score-vs">–</div>
-        <div class="score-box"><div class="score-label">${m.rival}</div>
+        <div class="score-box"><div class="score-label" onclick="setServe('away')" title="Toca para marcar que saca este equipo">${m.rival}${chip('away')}</div>
           <div class="score-controls"><button onclick="scoreChange('away',-1)">−</button><div class="score-val">${score.away}</div><button onclick="scoreChange('away',1)">+</button></div>
           <button class="btn-timeout" ${awayTOs>=2?'disabled':''} onclick="requestTimeout('away')">⏱ Tiempo muerto (${awayTOs}/2)</button>
         </div>
@@ -3072,51 +3379,65 @@ function renderLive(el) {
       <div class="live-match-info"><div class="live-vs">${team?team.name:''} vs ${m.rival}</div><div class="live-meta">${fmtDate(m.date)}${jornadaLabel(m)} · ${m.homeAway==='visitante'?'Visitante':'Local'} · ${m.actions.length} acciones</div></div>
       </div>
       ${setsSummary(m) ? `<div class="sets-summary">${setsSummary(m)}</div>` : ''}
-    </div>
-
-    ${pendingSubPlayerId ? `<div class="sub-banner"><span>Elige quién sale a cambio de ${playerLabel(pendingSubPlayerId)}</span><button class="btn-secondary btn-sm" onclick="cancelSub()">Cancelar</button></div>` : ''}
-    ${(() => {
-      const negStreak = computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet));
-      if (negStreak >= NEGATIVE_STREAK_THRESHOLD && negStreak > dismissedStreakCount) {
-        return `<div class="streak-banner"><span>🔥 ${negStreak} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</span><button class="streak-banner-close" onclick="dismissStreakAlert(${negStreak})">✕</button></div>`;
-      }
-      return '';
-    })()}
-
-    <div class="section-title">Registrar acción — barrido izquierda a derecha</div>
-    <div class="tracker-grid">
-      <div class="tracker-col">
+    </div>`;
+}
+function liveBannersHTML(m, team) {
+  let html = '';
+  if (pendingSubPlayerId) html += `<div class="sub-banner"><span>Elige quién sale a cambio de ${playerLabel(pendingSubPlayerId)}</span><button class="btn-secondary btn-sm" onclick="cancelSub()">Cancelar</button></div>`;
+  if (!getServe(m)) html += `<div class="sub-banner"><span>¿Quién saca primero en el set ${m.currentSet}?</span><span style="display:flex;gap:8px"><button class="btn-secondary btn-sm" onclick="setServe('home')">${team?escHTML(team.name):'Nosotros'}</button><button class="btn-secondary btn-sm" onclick="setServe('away')">${escHTML(m.rival)}</button></span></div>`;
+  if (!videoMode) {
+    const negStreak = computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet));
+    if (negStreak >= NEGATIVE_STREAK_THRESHOLD && negStreak > dismissedStreakCount) {
+      html += `<div class="streak-banner"><span>🔥 ${negStreak} acciones negativas seguidas del equipo en este set — ¿tiempo muerto o cambio?</span><button class="streak-banner-close" onclick="dismissStreakAlert(${negStreak})">✕</button></div>`;
+    }
+  }
+  return html;
+}
+function livePlayersColHTML(m, active) {
+  return `
+      <div class="tracker-col players">
         <div class="tracker-col-title">1. Jugadora</div>
-        ${active.map(p=>{
+        ${active.map((p,i)=>{
           const wl = computeWorkloadAlert(m, p.id);
           const streak = computeNegativeStreak(m.actions.filter(a=>a.set===m.currentSet && a.playerId===p.id));
           const streakAlert = streak >= NEGATIVE_STREAK_THRESHOLD;
+          const showAlerts = !videoMode;
           const titleParts = [];
           if (wl.alert) titleParts.push(`Carga alta: ${wl.totalPoints} puntos jugados, ${wl.consec} sets seguidos`);
           if (streakAlert) titleParts.push(`${streak} acciones negativas seguidas`);
           return `
           <button class="tracker-btn player ${p.position==='Libero'?'libero':''} ${p.id===selectedPlayerId?'selected':''} ${pendingSubPlayerId?'sub-target':''}" onclick="activeClick('${p.id}')" ${titleParts.length ? `title="${titleParts.join(' · ')}"` : ''}>
-            #${p.number!=null?p.number:'-'} ${fullName(p)}${p.position?` <span class="pos-tag pos-${p.position}">${posAbbr(p.position)}</span>`:''}${wl.alert ? ' <span style="color:var(--danger);font-weight:800">⚠</span>' : ''}${streakAlert ? ' <span style="color:var(--danger);font-weight:800">🔥</span>' : ''}
+            ${i<9 ? kbdHTML(i+1) : ''}#${p.number!=null?p.number:'-'} ${videoMode ? p.name : fullName(p)}${p.position?` <span class="pos-tag pos-${p.position}">${posAbbr(p.position)}</span>`:''}${showAlerts && wl.alert ? ' <span style="color:var(--danger);font-weight:800">⚠</span>' : ''}${showAlerts && streakAlert ? ' <span style="color:var(--danger);font-weight:800">🔥</span>' : ''}
           </button>`;
         }).join('')}
-      </div>
-      <div class="tracker-col">
-        <div class="tracker-col-title">2. Acción</div>
-        ${ACTIONS.map(a=>`<button class="tracker-btn action ${selectedActionId===a.id?'selected':''}" onclick="selectActionT('${a.id}')">${a.label}</button>`).join('')}
-      </div>
-      <div class="tracker-col">
-        <div class="tracker-col-title">3. Nivel</div>
-        ${RATINGS.map(r=>{
-          const count = (selectedPlayerId && selectedActionId) ? m.actions.filter(x=>x.playerId===selectedPlayerId && x.set===m.currentSet && x.action===selectedActionId && x.rating===r.id).length : 0;
-          return `<button class="tracker-btn rating ${r.cls}" onclick="commitRating('${r.id}')">${r.label}<span class="rating-count">${count}</span></button>`;
-        }).join('')}
-      </div>
-      <div class="tracker-col">
-        <div class="tracker-col-title">4. Zona</div>
-        ${zoneGridHTML(m)}
-      </div>
-    </div>
-
+      </div>`;
+}
+function liveActionGridHTML(m) {
+  const counts = {};
+  if (selectedPlayerId) m.actions.forEach(x=>{ if (x.playerId===selectedPlayerId && x.set===m.currentSet) { const k = x.action + '|' + x.rating; counts[k] = (counts[k]||0) + 1; } });
+  return `
+      <div class="tracker-col gridcol">
+        <div class="tracker-col-title">2. Acción y nivel</div>
+        <div class="ag-head"><div></div>${RATINGS.map(r=>`<div>${r.label}${HAS_KBD ? ' ' + RATING_ARROW[r.id] : ''}</div>`).join('')}</div>
+        ${ACTIONS.map(a=>`
+        <div class="ag-row ${selectedActionId===a.id?'sel':''}">
+          <div class="ag-label">${kbdHTML(ACTION_KEYS[a.id]||'')}${a.label}</div>
+          ${RATINGS.map(r=>`<button class="ag-cell ${r.cls}" onclick="recordCell('${a.id}','${r.id}')" aria-label="${a.label} ${r.label}">${RATING_SYMBOL[r.id]}<span class="ag-count">${counts[a.id+'|'+r.id]||0}</span></button>`).join('')}
+        </div>`).join('')}
+      </div>`;
+}
+function livePointRowHTML(m) {
+  const serve = getServe(m);
+  const homeHint = !serve ? 'Indica antes quién saca' : (serve==='away' ? 'Recuperamos saque: rotamos' : 'Seguimos sacando');
+  const awayHint = !serve ? 'Indica antes quién saca' : (serve==='home' ? 'Pasa a sacar el rival' : 'Sigue sacando el rival');
+  return `
+    <div class="point-row">
+      <button class="point-btn home" onclick="scorePoint('home')"><span>${kbdHTML('+')}Punto nuestro</span><small>${homeHint}</small></button>
+      <button class="point-btn away" onclick="scorePoint('away')"><span>${kbdHTML('−')}Punto rival</span><small>${awayHint}</small></button>
+    </div>`;
+}
+function liveBenchHTML(m, bench) {
+  return `
     <div class="lineup-label">Banquillo (toca para hacer un cambio)</div>
     <div class="bench-bar" id="bench-bar">
       ${bench.length ? bench.map(p=>`
@@ -3124,15 +3445,20 @@ function renderLive(el) {
           <div class="pnum">${p.number!=null?p.number:'-'}</div>
           <div class="pname">${fullName(p)}</div>
         </div>`).join('') : '<div class="empty-text">Sin jugadoras en el banquillo</div>'}
-    </div>
-
+    </div>`;
+}
+function liveControlsHTML(m) {
+  return `
     <div class="live-controls">
-      <button class="btn-secondary" onclick="undoLastAction()">↩ Deshacer última acción</button>
+      <button class="btn-secondary" onclick="undoLastAction()">↩ Deshacer${HAS_KBD ? ' (Z)' : ''}</button>
+      ${videoMode ? '' : `<button class="btn-secondary" onclick="document.getElementById('video-file-input').click()">🎬 Modo vídeo</button>`}
       <button class="btn-secondary" onclick="downloadMatchCSV('${m.id}')">⬇ Descargar Excel del partido</button>
       <button class="btn-secondary" onclick="openLiveNotesModal('${m.id}')">📝 Notas del partido${m.notes ? ' · con contenido' : ''}</button>
       <button class="btn-danger" onclick="finishMatch('${m.id}')">Finalizar partido</button>
-    </div>
-
+    </div>`;
+}
+function liveStatsHTML(m) {
+  return `
     <div class="page-header" style="margin-top:20px">
       <div class="section-title" style="margin:0">${liveStatsScope==='set' ? 'Estadísticas del set actual' : 'Estadísticas totales del partido'}</div>
       <div class="tab-bar" style="margin:0;border-bottom:none">
@@ -3141,9 +3467,171 @@ function renderLive(el) {
       </div>
     </div>
     ${teamKPIPanelHTML(liveStatsScope==='set' ? m.actions.filter(a=>a.set===m.currentSet) : m.actions)}
-    <div id="live-stats-table">${statsTableHTML(liveStatsScope==='set' ? m.actions.filter(a=>a.set===m.currentSet) : m.actions, db.players.filter(p=>m.squadIds.includes(p.id)))}</div>
-  `;
+    <div id="live-stats-table">${statsTableHTML(liveStatsScope==='set' ? m.actions.filter(a=>a.set===m.currentSet) : m.actions, db.players.filter(p=>m.squadIds.includes(p.id)))}</div>`;
 }
+function liveLogHTML(m) {
+  const last = m.actions.slice(-8).reverse();
+  return `
+    <div class="log-card">
+      <div class="log-title"><span>Últimas acciones</span><small>Toca una para corregirla</small></div>
+      ${last.length ? last.map(a=>{
+        const p = db.players.find(x=>x.id===a.playerId);
+        const r = RATINGS.find(x=>x.id===a.rating) || { cls:'' };
+        return `<button class="log-row" onclick="openEditAction('${a.id}')">
+          <span class="lt">${a.videoT!=null ? fmtVideoT(a.videoT) : 'S' + a.set}</span>
+          <span class="lw">${p ? '#' + (p.number!=null?p.number:'-') + ' ' + escHTML(p.name) : '—'}</span>
+          <span class="la">${actionLabel(a.action)}</span>
+          <span class="ll ${r.cls}">${RATING_SYMBOL[a.rating]||''}</span>
+          <span class="lz">${a.zone==null ? '' : (a.zone==='fuera' ? 'Fuera' : 'Z' + a.zone)}</span>
+        </button>`;
+      }).join('') : '<div class="empty-text" style="text-align:left;padding:6px 0">Aún no hay acciones</div>'}
+    </div>`;
+}
+const KBD_HELP = 'Teclado: 1-6 jugadora · letra de la acción · ↑ → ↓ nivel · + / − punto · Z deshacer';
+
+function renderLive(el) {
+  const m = db.matches.find(x=>x.id===liveMatchId);
+  if (!m) { goScreen('matches'); return; }
+  if (!m.serveBySet) m.serveBySet = {};
+  const team = db.teams.find(t=>t.id===m.teamId);
+  const active = liveActivePlayers(m);
+  const bench = db.players.filter(p=>m.squadIds.includes(p.id) && !m.activePlayerIds.includes(p.id)).sort((a,b)=>(a.number||0)-(b.number||0));
+  if ((!selectedPlayerId || !active.find(p=>p.id===selectedPlayerId)) && active.length) selectedPlayerId = active[0].id;
+  const score = m.setScores[m.currentSet] || { home:0, away:0 };
+  document.body.classList.toggle('video-mode', videoMode);
+
+  if (!videoMode) {
+    el.innerHTML = `
+    ${liveHeaderHTML(m, team, score)}
+    ${liveBannersHTML(m, team)}
+    <div class="section-title">Registrar acción — jugadora y casilla</div>
+    ${HAS_KBD ? `<div class="kbd-help">${KBD_HELP}</div>` : ''}
+    <div class="tracker-grid v2">
+      ${livePlayersColHTML(m, active)}
+      ${liveActionGridHTML(m)}
+      <div class="tracker-col zonecol">
+        <div class="tracker-col-title">3. Zona</div>
+        ${zoneGridHTML(m)}
+      </div>
+    </div>
+    ${livePointRowHTML(m)}
+    ${liveBenchHTML(m, bench)}
+    ${liveControlsHTML(m)}
+    ${liveStatsHTML(m)}
+  `;
+    return;
+  }
+
+  // Modo vídeo: el vídeo vive en un nodo fijo que NO se repinta; solo se repintan los bloques de alrededor.
+  let wrap = el.querySelector('#live-wrap');
+  if (!wrap || wrap.dataset.mid !== m.id) {
+    el.innerHTML = `
+      <div id="live-wrap" data-mid="${m.id}">
+        <div id="live-body"></div>
+        <div id="video-side"><div id="video-pane"></div><div id="video-extra"></div></div>
+      </div>
+      <div id="live-below"></div>`;
+    el.querySelector('#video-pane').appendChild(ensureVideoPane());
+    updateVideoUI();
+  }
+  el.querySelector('#live-body').innerHTML = `
+    ${liveHeaderHTML(m, team, score)}
+    ${liveBannersHTML(m, team)}
+    ${HAS_KBD ? `<div class="kbd-help">${KBD_HELP} · Espacio pausa · ← retrocede 3 s</div>` : ''}
+    <div class="tracker-grid v2">
+      ${livePlayersColHTML(m, active)}
+      ${liveActionGridHTML(m)}
+    </div>
+    ${livePointRowHTML(m)}
+    ${liveBenchHTML(m, bench)}
+    ${liveControlsHTML(m)}`;
+  el.querySelector('#video-extra').innerHTML = `
+    <div class="zone-wrap"><div class="tracker-col-title">3. Zona</div>${zoneGridHTML(m)}</div>
+    ${liveLogHTML(m)}`;
+  el.querySelector('#live-below').innerHTML = liveStatsHTML(m);
+}
+
+/* ---------- Corregir una acción ya registrada ---------- */
+let editingActionId = null;
+function openEditAction(id) {
+  const m = liveMatch(); if (!m) return;
+  const a = m.actions.find(x=>x.id===id); if (!a) return;
+  editingActionId = id;
+  const squad = db.players.filter(p=>m.squadIds.includes(p.id)).sort((x,y)=>(x.number||0)-(y.number||0));
+  document.getElementById('edit-action-player').innerHTML = squad.map(p=>`<option value="${p.id}" ${p.id===a.playerId?'selected':''}>#${p.number!=null?p.number:'-'} ${escHTML(fullName(p))}</option>`).join('');
+  document.getElementById('edit-action-action').innerHTML = ACTIONS.map(x=>`<option value="${x.id}" ${x.id===a.action?'selected':''}>${x.label}</option>`).join('');
+  document.getElementById('edit-action-rating').innerHTML = RATINGS.map(x=>`<option value="${x.id}" ${x.id===a.rating?'selected':''}>${x.label}</option>`).join('');
+  const zoneOpts = [['','Sin zona']].concat([1,2,3,4,5,6,7,8,9].map(z=>[String(z),'Zona '+z])).concat([['fuera','Fuera']]);
+  const cur = a.zone==null ? '' : String(a.zone);
+  document.getElementById('edit-action-zone').innerHTML = zoneOpts.map(z=>`<option value="${z[0]}" ${z[0]===cur?'selected':''}>${z[1]}</option>`).join('');
+  document.getElementById('edit-action-info').textContent = `Set ${a.set}` + (a.videoT!=null ? ` · minuto ${fmtVideoT(a.videoT)} del vídeo` : '');
+  document.getElementById('edit-action-seek').style.display = (a.videoT!=null && videoMode) ? '' : 'none';
+  openModal('modal-edit-action');
+}
+function saveEditAction() {
+  const m = liveMatch(); if (!m) return;
+  const a = m.actions.find(x=>x.id===editingActionId); if (!a) return closeModal('modal-edit-action');
+  const pid = document.getElementById('edit-action-player').value;
+  if (pid !== a.playerId) { a.playerId = pid; a.rotationPos = null; }
+  a.action = document.getElementById('edit-action-action').value;
+  a.rating = document.getElementById('edit-action-rating').value;
+  const z = document.getElementById('edit-action-zone').value;
+  a.zone = !ZONE_ACTIONS.includes(a.action) || z==='' ? null : (z==='fuera' ? 'fuera' : parseInt(z,10));
+  saveDB();
+  closeModal('modal-edit-action');
+  showToast('Acción corregida');
+  renderLive(document.getElementById('main-content'));
+}
+function deleteEditAction() {
+  const m = liveMatch(); if (!m) return;
+  m.actions = m.actions.filter(x=>x.id!==editingActionId);
+  if (lastActionId === editingActionId) lastActionId = m.actions.length ? m.actions[m.actions.length-1].id : null;
+  saveDB();
+  closeModal('modal-edit-action');
+  showToast('Acción eliminada');
+  renderLive(document.getElementById('main-content'));
+}
+function seekToEditAction() {
+  const m = liveMatch(); if (!m || !videoEl) return;
+  const a = m.actions.find(x=>x.id===editingActionId);
+  if (!a || a.videoT==null) return;
+  videoEl.currentTime = Math.max(0, a.videoT - 3);
+  closeModal('modal-edit-action');
+}
+
+/* ---------- Atajos de teclado (portátil) ---------- */
+document.addEventListener('keydown', e=>{
+  if (currentScreen !== 'live' || !currentUser) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('.modal-overlay.open')) return;
+  const tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  const m = liveMatch(); if (!m) return;
+  const k = e.key;
+  if (videoMode && videoEl && tag !== 'VIDEO') {
+    if (k === ' ') { e.preventDefault(); if (e.target && e.target.blur && tag === 'BUTTON') e.target.blur(); videoToggle(); return; }
+    if (k === 'ArrowLeft') { e.preventDefault(); videoSeekBy(-3); return; }
+  }
+  if (tag === 'VIDEO') return;
+  if (/^[1-9]$/.test(k)) {
+    const p = liveActivePlayers(m)[parseInt(k,10)-1];
+    if (p) { e.preventDefault(); activeClick(p.id); }
+    return;
+  }
+  const lower = k.length === 1 ? k.toLowerCase() : k;
+  const actionId = Object.keys(ACTION_KEYS).find(id=>ACTION_KEYS[id].toLowerCase() === lower);
+  if (actionId) { e.preventDefault(); selectedActionId = actionId; renderLive(document.getElementById('main-content')); return; }
+  const ratingByKey = { ArrowUp:'doble_positiva', ArrowRight:'positiva', ArrowDown:'negativa' };
+  if (ratingByKey[k]) {
+    e.preventDefault();
+    if (!selectedActionId) return showToast('Pulsa antes la letra de la acción');
+    commitRating(ratingByKey[k]);
+    return;
+  }
+  if (k === '+') { e.preventDefault(); scorePoint('home'); return; }
+  if (k === '-') { e.preventDefault(); scorePoint('away'); return; }
+  if (lower === 'z') { e.preventDefault(); undoLastAction(); return; }
+});
 function playerLabel(pid) { const p = db.players.find(x=>x.id===pid); return p ? `#${p.number!=null?p.number:'-'} ${fullName(p)}` : '—'; }
 const ZONE_LAYOUT = [4,3,2,7,8,9,5,6,1];
 const ZONE_ACTIONS = ['colocacion','recepcion','defensa','ataque','saque','bloqueo'];
@@ -3186,6 +3674,11 @@ function selectActionT(aid) {
   selectedActionId = (selectedActionId===aid) ? null : aid;
   renderLive(document.getElementById('main-content'));
 }
+function recordCell(actionId, ratingId) {
+  if (!selectedPlayerId) return showToast('Selecciona primero una jugadora en pista');
+  selectedActionId = null;
+  recordAction(actionId, ratingId);
+}
 function commitRating(ratingId) {
   if (!selectedPlayerId) return showToast('Selecciona primero una jugadora en pista');
   if (!selectedActionId) return showToast('Selecciona la acción antes del nivel');
@@ -3195,7 +3688,7 @@ function commitRating(ratingId) {
 }
 function activeClick(pid) {
   if (pendingSubPlayerId) { doSubstitution(pendingSubPlayerId, pid); }
-  else { selectedPlayerId = pid; renderLive(document.getElementById('main-content')); }
+  else { selectedPlayerId = pid; videoPauseForEntry(); renderLive(document.getElementById('main-content')); }
 }
 function benchClick(pid) {
   pendingSubPlayerId = (pendingSubPlayerId===pid) ? null : pid;
@@ -3299,7 +3792,9 @@ function requestTimeout(side) {
 function recordAction(actionId, ratingId) {
   const m = db.matches.find(x=>x.id===liveMatchId);
   if (!selectedPlayerId) return showToast('Selecciona primero una jugadora en pista');
-  const newAction = { id:uid(), playerId:selectedPlayerId, action:actionId, rating:ratingId, set:m.currentSet, ts:Date.now(), zone:null, rotationPos:null };
+  const newAction = { id:uid(), playerId:selectedPlayerId, action:actionId, rating:ratingId, set:m.currentSet, ts:nowTs(), zone:null, rotationPos:null };
+  const vt = currentVideoT();
+  if (vt !== null) newAction.videoT = vt;
   const rot = getRotationArray(m);
   const rotIdx = rot.indexOf(selectedPlayerId);
   if (rotIdx !== -1) newAction.rotationPos = rotIdx + 1;
@@ -3309,13 +3804,28 @@ function recordAction(actionId, ratingId) {
   saveDB();
   showToast(`${playerLabel(selectedPlayerId)}: ${actionLabel(actionId)} · ${RATINGS.find(r=>r.id===ratingId).label}`, true);
   renderLive(document.getElementById('main-content'));
+  videoResumeIfNeeded();
 }
 function undoLastAction() {
   const m = db.matches.find(x=>x.id===liveMatchId);
-  if (!m.actions.length) return showToast('No hay acciones que deshacer');
-  const removed = m.actions.pop();
-  if (removed.id === lastActionId) lastActionId = m.actions.length ? m.actions[m.actions.length-1].id : null;
-  saveDB(); showToast('Última acción deshecha');
+  if (!m) return;
+  const pts = Array.isArray(m.points) ? m.points : [];
+  const lastA = m.actions.length ? m.actions[m.actions.length-1] : null;
+  const lastP = pts.length ? pts[pts.length-1] : null;
+  if (!lastA && !lastP) return showToast('No hay nada que deshacer');
+  if (lastP && (!lastA || lastP.ts > lastA.ts)) {
+    pts.pop();
+    const sc = m.setScores[lastP.set];
+    if (sc) sc[lastP.side] = Math.max(0, sc[lastP.side] - 1);
+    if (lastP.rotated) { const rot = (m.rotationBySet||{})[lastP.set]; if (rot) rot.unshift(rot.pop()); }
+    if (!m.serveBySet) m.serveBySet = {};
+    m.serveBySet[lastP.set] = lastP.serveBefore;
+    saveDB(); showToast('Punto deshecho');
+  } else {
+    const removed = m.actions.pop();
+    if (removed.id === lastActionId) lastActionId = m.actions.length ? m.actions[m.actions.length-1].id : null;
+    saveDB(); showToast('Última acción deshecha');
+  }
   renderLive(document.getElementById('main-content'));
 }
 let pendingFinishMatchId = null;
@@ -3664,6 +4174,7 @@ function renderMatchStats(el) {
       <div style="display:flex;gap:8px">
         ${m.status==='live' ? `<button class="btn-gold btn-sm" onclick="openLive('${m.id}')">Continuar en directo</button>` : `<button class="btn-secondary btn-sm" onclick="reopenMatch('${m.id}')">✏️ Reabrir para editar</button>`}
         <button class="btn-secondary btn-sm" onclick="downloadMatchCSV('${m.id}')">⬇ Descargar Excel</button>
+        <button class="btn-secondary btn-sm" onclick="exportMatchJSON('${m.id}')">⬆ Exportar partido</button>
       </div>
     </div>
     <div class="gold-line"></div>
